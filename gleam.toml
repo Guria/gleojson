@@ -1,0 +1,14 @@
+name = "gleojson"
+version = "0.1.0"
+
+description = "A Gleam library for encoding and decoding GeoJSON"
+licences = ["MIT"]
+repository = { type = "github", user = "guria", repo = "gleojson" }
+links = [{ title = "RFC7946", href = "https://datatracker.ietf.org/doc/html/rfc7946" }]
+
+[dependencies]
+gleam_stdlib = ">= 0.34.0 and < 2.0.0"
+gleam_json = ">= 2.0.0 and < 3.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
