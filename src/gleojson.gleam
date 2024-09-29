@@ -506,24 +506,6 @@ pub fn feature_decoder(
             named: "properties",
             of: dynamic.optional(dynamic.dict(dynamic.string, dynamic.dynamic)),
           )(dynamic_value)
-
-        let id_result =
-          dynamic.optional_field(named: "id", of: dynamic.dynamic)(
-            dynamic_value,
-          )
-
-        let geometry_result =
-          geometry_result
-          |> result.map_error(fn(_errs) {
-            [
-              dynamic.DecodeError(expected: "Geometry", found: "Invalid", path: [
-                "geometry",
-              ]),
-            ]
-          })
-
-        let properties_result =
-          properties_result
           |> result.map_error(fn(_errs) {
             [
               dynamic.DecodeError(
@@ -535,10 +517,22 @@ pub fn feature_decoder(
           })
 
         let id_result =
-          id_result
+          dynamic.optional_field(named: "id", of: dynamic.dynamic)(
+            dynamic_value,
+          )
           |> result.map_error(fn(_errs) {
             [
               dynamic.DecodeError(expected: "ID", found: "Invalid", path: ["id"]),
+            ]
+          })
+
+        let geometry_result =
+          geometry_result
+          |> result.map_error(fn(_errs) {
+            [
+              dynamic.DecodeError(expected: "Geometry", found: "Invalid", path: [
+                "geometry",
+              ]),
             ]
           })
 
