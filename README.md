@@ -53,3 +53,7 @@ Further documentation can be found at https://hexdocs.pm/gleojson.
 gleam build
 gleam test
 ```
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for more details.

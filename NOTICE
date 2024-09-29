@@ -1,0 +1,23 @@
+# NOTICE
+
+Copyright (c) 2024 Aleksei Gurianov and contributors.
+This project is licensed under the MIT License. See the LICENSE file for the full license text.
+
+## AI Assistance Acknowledgment
+
+This project was bootstrapped with assistance from the OpenAI `o1-preview` model.
+It was used to scaffold basic types and encoder/decoder functions according to [RFC 7946](https://datatracker.ietf.org/doc/html/rfc7946).
+Manual edits were made to adjust the generated code to the actual Gleam language and to fix compilation errors.
+Captured assistance session could be found in initial commit message.
+
+Other AI models from different providers were used to provide suggestions, generate initial code structures, and assist in problem-solving during the early stages of development.
+
+It's important to note that while AI assistance was used, all final decisions, implementations, and the overall direction of the project were determined by human developers.
+
+## Copyrights and Licenses for Third Party Software
+
+Package dependencies are defined in the `gleam.toml` file in the top-level directory of the project and have their own licenses and terms.
+
+## Additional Notices
+
+This NOTICE file is provided for informational purposes and does not modify the license terms of this software or any third-party software acknowledged herein.
