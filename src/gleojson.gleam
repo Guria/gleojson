@@ -71,12 +71,18 @@ pub type Geometry {
   GeometryGeometryCollection(GeometryCollection)
 }
 
+/// Represents either a String or a Number, used for the Feature id.
+pub type FeatureId {
+  StringId(String)
+  NumberId(Float)
+}
+
 /// A feature in a GeoJSON object.
 pub type Feature {
   Feature(
     geometry: option.Option(Geometry),
     properties: option.Option(dict.Dict(String, dynamic.Dynamic)),
-    id: option.Option(dynamic.Dynamic),
+    id: option.Option(FeatureId),
   )
 }
 
@@ -233,10 +239,18 @@ pub fn encode_feature(feature: Feature) -> dynamic.Dynamic {
       #("properties", properties_dyn),
     ])
   let obj = case id_opt {
-    option.Some(id_dyn) -> dict.insert(base_obj, "id", id_dyn)
+    option.Some(id) -> dict.insert(base_obj, "id", encode_feature_id(id))
     option.None -> base_obj
   }
   dynamic.from(obj)
+}
+
+/// Encodes a FeatureId into a dynamic value.
+fn encode_feature_id(id: FeatureId) -> dynamic.Dynamic {
+  case id {
+    StringId(s) -> dynamic.from(s)
+    NumberId(n) -> dynamic.from(n)
+  }
 }
 
 /// Encodes a feature collection into a dynamic value.
@@ -517,7 +531,7 @@ pub fn feature_decoder(
           })
 
         let id_result =
-          dynamic.optional_field(named: "id", of: dynamic.dynamic)(
+          dynamic.optional_field(named: "id", of: feature_id_decoder)(
             dynamic_value,
           )
           |> result.map_error(fn(_errs) {
@@ -553,6 +567,27 @@ pub fn feature_decoder(
         ])
     }
   })
+}
+
+/// Decodes a FeatureId from a dynamic value.
+fn feature_id_decoder(
+  dynamic_value: dynamic.Dynamic,
+) -> Result(FeatureId, List(dynamic.DecodeError)) {
+  case dynamic.string(dynamic_value) {
+    Ok(s) -> Ok(StringId(s))
+    Error(_) ->
+      case dynamic.float(dynamic_value) {
+        Ok(n) -> Ok(NumberId(n))
+        Error(_) ->
+          Error([
+            dynamic.DecodeError(
+              expected: "String or Number",
+              found: dynamic.classify(dynamic_value),
+              path: [],
+            ),
+          ])
+      }
+  }
 }
 
 /// Decodes a feature collection from a dynamic value.
