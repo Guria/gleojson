@@ -127,7 +127,7 @@ pub fn feature_encode_decode_test() {
     gleojson.Feature(
       geometry: option.Some(gleojson.GeometryPoint(point)),
       properties: option.Some(properties),
-      id: option.Some(dynamic.from("feature-id")),
+      id: option.Some(gleojson.StringId("feature-id")),
     )
 
   let encoded_dynamic = gleojson.encode_feature(original_feature)
@@ -155,7 +155,7 @@ pub fn featurecollection_encode_decode_test() {
     gleojson.Feature(
       geometry: option.Some(gleojson.GeometryPoint(point)),
       properties: option.Some(properties),
-      id: option.Some(dynamic.from("feature-id")),
+      id: option.Some(gleojson.StringId("feature-id")),
     )
 
   let original_featurecollection = gleojson.FeatureCollection([feature])
