@@ -358,3 +358,329 @@ pub fn featurecollection_decode_test() {
   decoded_geojson
   |> should.equal(expected_geojson)
 }
+
+pub fn point_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"Point\",
+    \"coordinates\": [100.0, 0.0]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryPoint(gleojson.Point([100.0, 0.0])),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn linestring_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"LineString\",
+    \"coordinates\": [
+      [100.0, 0.0],
+      [101.0, 1.0]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryLineString(
+        gleojson.LineString([[100.0, 0.0], [101.0, 1.0]]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn polygon_no_holes_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"Polygon\",
+    \"coordinates\": [
+      [
+        [100.0, 0.0],
+        [101.0, 0.0],
+        [101.0, 1.0],
+        [100.0, 1.0],
+        [100.0, 0.0]
+      ]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryPolygon(
+        gleojson.Polygon([
+          [[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0]],
+        ]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn polygon_with_holes_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"Polygon\",
+    \"coordinates\": [
+      [
+        [100.0, 0.0],
+        [101.0, 0.0],
+        [101.0, 1.0],
+        [100.0, 1.0],
+        [100.0, 0.0]
+      ],
+      [
+        [100.8, 0.8],
+        [100.8, 0.2],
+        [100.2, 0.2],
+        [100.2, 0.8],
+        [100.8, 0.8]
+      ]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryPolygon(
+        gleojson.Polygon([
+          [[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0]],
+          [[100.8, 0.8], [100.8, 0.2], [100.2, 0.2], [100.2, 0.8], [100.8, 0.8]],
+        ]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn multipoint_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"MultiPoint\",
+    \"coordinates\": [
+      [100.0, 0.0],
+      [101.0, 1.0]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryMultiPoint(
+        gleojson.MultiPoint([[100.0, 0.0], [101.0, 1.0]]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn multilinestring_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"MultiLineString\",
+    \"coordinates\": [
+      [
+        [100.0, 0.0],
+        [101.0, 1.0]
+      ],
+      [
+        [102.0, 2.0],
+        [103.0, 3.0]
+      ]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryMultiLineString(
+        gleojson.MultiLineString([
+          [[100.0, 0.0], [101.0, 1.0]],
+          [[102.0, 2.0], [103.0, 3.0]],
+        ]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn multipolygon_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"MultiPolygon\",
+    \"coordinates\": [
+      [
+        [
+          [102.0, 2.0],
+          [103.0, 2.0],
+          [103.0, 3.0],
+          [102.0, 3.0],
+          [102.0, 2.0]
+        ]
+      ],
+      [
+        [
+          [100.0, 0.0],
+          [101.0, 0.0],
+          [101.0, 1.0],
+          [100.0, 1.0],
+          [100.0, 0.0]
+        ],
+        [
+          [100.2, 0.2],
+          [100.2, 0.8],
+          [100.8, 0.8],
+          [100.8, 0.2],
+          [100.2, 0.2]
+        ]
+      ]
+    ]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryMultiPolygon(
+        gleojson.MultiPolygon([
+          [
+            [
+              [102.0, 2.0],
+              [103.0, 2.0],
+              [103.0, 3.0],
+              [102.0, 3.0],
+              [102.0, 2.0],
+            ],
+          ],
+          [
+            [
+              [100.0, 0.0],
+              [101.0, 0.0],
+              [101.0, 1.0],
+              [100.0, 1.0],
+              [100.0, 0.0],
+            ],
+            [
+              [100.2, 0.2],
+              [100.2, 0.8],
+              [100.8, 0.8],
+              [100.8, 0.2],
+              [100.2, 0.2],
+            ],
+          ],
+        ]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
+
+pub fn geometrycollection_example_test() {
+  let json_string =
+    "
+  {
+    \"type\": \"GeometryCollection\",
+    \"geometries\": [{
+      \"type\": \"Point\",
+      \"coordinates\": [100.0, 0.0]
+    }, {
+      \"type\": \"LineString\",
+      \"coordinates\": [
+        [101.0, 0.0],
+        [102.0, 1.0]
+      ]
+    }]
+  }
+  "
+
+  let decode_result =
+    json.decode(from: json_string, using: gleojson.geojson_decoder)
+
+  let decoded_geojson =
+    decode_result
+    |> should.be_ok
+
+  let expected_geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.GeometryGeometryCollection(
+        gleojson.GeometryCollection([
+          gleojson.GeometryPoint(gleojson.Point([100.0, 0.0])),
+          gleojson.GeometryLineString(
+            gleojson.LineString([[101.0, 0.0], [102.0, 1.0]]),
+          ),
+        ]),
+      ),
+    )
+
+  decoded_geojson
+  |> should.equal(expected_geojson)
+}
