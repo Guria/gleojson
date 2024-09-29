@@ -68,7 +68,7 @@ pub type Geometry {
   GeometryMultiLineString(MultiLineString)
   GeometryPolygon(Polygon)
   GeometryMultiPolygon(MultiPolygon)
-  GeometryCollectionType(GeometryCollection)
+  GeometryGeometryCollection(GeometryCollection)
 }
 
 /// A feature in a GeoJSON object.
@@ -210,7 +210,8 @@ pub fn encode_geometry(geometry: Geometry) -> dynamic.Dynamic {
       encode_multilinestring(multilinestring)
     GeometryPolygon(polygon) -> encode_polygon(polygon)
     GeometryMultiPolygon(multipolygon) -> encode_multipolygon(multipolygon)
-    GeometryCollectionType(collection) -> encode_geometrycollection(collection)
+    GeometryGeometryCollection(collection) ->
+      encode_geometrycollection(collection)
   }
 }
 
@@ -473,7 +474,7 @@ pub fn geometry_decoder(
         |> result.map(GeometryMultiPolygon)
       "GeometryCollection" ->
         geometrycollection_decoder(dynamic_value)
-        |> result.map(GeometryCollectionType)
+        |> result.map(GeometryGeometryCollection)
       _ ->
         Error([
           dynamic.DecodeError(
