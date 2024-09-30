@@ -13,7 +13,6 @@
 //// ```
 ////
 //// Then you can use the provided functions to encode and decode GeoJSON data.
-//// Types
 
 import gleam/dict
 import gleam/dynamic
@@ -25,50 +24,15 @@ import gleam/result
 pub type Position =
   List(Float)
 
-/// A point in a GeoJSON object.
-pub type Point {
-  Point(coordinates: Position)
-}
-
-/// A multi-point in a GeoJSON object.
-pub type MultiPoint {
-  MultiPoint(coordinates: List(Position))
-}
-
-/// A line string in a GeoJSON object.
-pub type LineString {
-  LineString(coordinates: List(Position))
-}
-
-/// A multi-line string in a GeoJSON object.
-pub type MultiLineString {
-  MultiLineString(coordinates: List(List(Position)))
-}
-
-/// A polygon in a GeoJSON object.
-pub type Polygon {
-  Polygon(coordinates: List(List(Position)))
-}
-
-/// A multi-polygon in a GeoJSON object.
-pub type MultiPolygon {
-  MultiPolygon(coordinates: List(List(List(Position))))
-}
-
-/// A collection of geometries in a GeoJSON object.
-pub type GeometryCollection {
-  GeometryCollection(geometries: List(Geometry))
-}
-
-/// A geometry in a GeoJSON object.
+/// A Geometry in a GeoJSON object.
 pub type Geometry {
-  GeometryPoint(Point)
-  GeometryMultiPoint(MultiPoint)
-  GeometryLineString(LineString)
-  GeometryMultiLineString(MultiLineString)
-  GeometryPolygon(Polygon)
-  GeometryMultiPolygon(MultiPolygon)
-  GeometryGeometryCollection(GeometryCollection)
+  Point(coordinates: Position)
+  MultiPoint(coordinates: List(Position))
+  LineString(coordinates: List(Position))
+  MultiLineString(coordinates: List(List(Position)))
+  Polygon(coordinates: List(List(Position)))
+  MultiPolygon(coordinates: List(List(List(Position))))
+  GeometryCollection(geometries: List(Geometry))
 }
 
 /// Represents either a String or a Number, used for the Feature id.
@@ -77,7 +41,7 @@ pub type FeatureId {
   NumberId(Float)
 }
 
-/// A feature in a GeoJSON object.
+/// A feature in a GeoJSON object, consisting of a geometry, properties, and an optional id.
 pub type Feature {
   Feature(
     geometry: option.Option(Geometry),
@@ -100,129 +64,58 @@ pub type GeoJSON {
 
 // Encoding Functions
 
-/// Encodes a position into a dynamic value.
-pub fn encode_position(position: Position) -> dynamic.Dynamic {
-  dynamic.from(position)
-}
-
-/// Encodes a list of positions into a dynamic value.
-pub fn encode_positions(positions: List(Position)) -> dynamic.Dynamic {
-  dynamic.from(positions)
-}
-
-/// Encodes a list of positions into a dynamic value.
-pub fn encode_positions_list(
-  positions_list: List(List(Position)),
-) -> dynamic.Dynamic {
-  dynamic.from(positions_list)
-}
-
-/// Encodes a list of lists of positions into a dynamic value.
-pub fn encode_positions_list_list(
-  positions_list_list: List(List(List(Position))),
-) -> dynamic.Dynamic {
-  dynamic.from(positions_list_list)
-}
-
-/// Encodes a point into a dynamic value.
-pub fn encode_point(point: Point) -> dynamic.Dynamic {
-  let Point(coordinates) = point
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("Point")),
-      #("coordinates", encode_position(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a multi-point into a dynamic value.
-pub fn encode_multipoint(multipoint: MultiPoint) -> dynamic.Dynamic {
-  let MultiPoint(coordinates) = multipoint
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("MultiPoint")),
-      #("coordinates", encode_positions(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a line string into a dynamic value.
-pub fn encode_linestring(linestring: LineString) -> dynamic.Dynamic {
-  let LineString(coordinates) = linestring
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("LineString")),
-      #("coordinates", encode_positions(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a multi-line string into a dynamic value.
-pub fn encode_multilinestring(
-  multilinestring: MultiLineString,
-) -> dynamic.Dynamic {
-  let MultiLineString(coordinates) = multilinestring
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("MultiLineString")),
-      #("coordinates", encode_positions_list(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a polygon into a dynamic value.
-pub fn encode_polygon(polygon: Polygon) -> dynamic.Dynamic {
-  let Polygon(coordinates) = polygon
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("Polygon")),
-      #("coordinates", encode_positions_list(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a multi-polygon into a dynamic value.
-pub fn encode_multipolygon(multipolygon: MultiPolygon) -> dynamic.Dynamic {
-  let MultiPolygon(coordinates) = multipolygon
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("MultiPolygon")),
-      #("coordinates", encode_positions_list_list(coordinates)),
-    ])
-  dynamic.from(obj)
-}
-
-/// Encodes a geometry collection into a dynamic value.
-pub fn encode_geometrycollection(
-  collection: GeometryCollection,
-) -> dynamic.Dynamic {
-  let GeometryCollection(geometries) = collection
-  let geometries_dyn_list = list.map(geometries, encode_geometry)
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("GeometryCollection")),
-      #("geometries", dynamic.from(geometries_dyn_list)),
-    ])
-  dynamic.from(obj)
-}
-
 /// Encodes a geometry into a dynamic value.
-pub fn encode_geometry(geometry: Geometry) -> dynamic.Dynamic {
+fn encode_geometry(geometry: Geometry) -> dynamic.Dynamic {
   case geometry {
-    GeometryPoint(point) -> encode_point(point)
-    GeometryMultiPoint(multipoint) -> encode_multipoint(multipoint)
-    GeometryLineString(linestring) -> encode_linestring(linestring)
-    GeometryMultiLineString(multilinestring) ->
-      encode_multilinestring(multilinestring)
-    GeometryPolygon(polygon) -> encode_polygon(polygon)
-    GeometryMultiPolygon(multipolygon) -> encode_multipolygon(multipolygon)
-    GeometryGeometryCollection(collection) ->
-      encode_geometrycollection(collection)
+    Point(coordinates) -> {
+      dict.from_list([
+        #("type", dynamic.from("Point")),
+        #("coordinates", dynamic.from(coordinates)),
+      ])
+    }
+    MultiPoint(multipoint) -> {
+      dict.from_list([
+        #("type", dynamic.from("MultiPoint")),
+        #("coordinates", dynamic.from(multipoint)),
+      ])
+    }
+    LineString(linestring) -> {
+      dict.from_list([
+        #("type", dynamic.from("LineString")),
+        #("coordinates", dynamic.from(linestring)),
+      ])
+    }
+    MultiLineString(multilinestring) -> {
+      dict.from_list([
+        #("type", dynamic.from("MultiLineString")),
+        #("coordinates", dynamic.from(multilinestring)),
+      ])
+    }
+    Polygon(polygon) -> {
+      dict.from_list([
+        #("type", dynamic.from("Polygon")),
+        #("coordinates", dynamic.from(polygon)),
+      ])
+    }
+    MultiPolygon(multipolygon) -> {
+      dict.from_list([
+        #("type", dynamic.from("MultiPolygon")),
+        #("coordinates", dynamic.from(multipolygon)),
+      ])
+    }
+    GeometryCollection(collection) -> {
+      let geometries_dyn_list = list.map(collection, encode_geometry)
+      dict.from_list([
+        #("type", dynamic.from("GeometryCollection")),
+        #("geometries", dynamic.from(geometries_dyn_list)),
+      ])
+    }
   }
+  |> dynamic.from
 }
 
 /// Encodes a feature into a dynamic value.
-pub fn encode_feature(feature: Feature) -> dynamic.Dynamic {
+fn encode_feature(feature: Feature) -> dynamic.Dynamic {
   let Feature(geometry_opt, properties_opt, id_opt) = feature
   let geometry_dyn = case geometry_opt {
     option.Some(geometry) -> encode_geometry(geometry)
@@ -238,36 +131,34 @@ pub fn encode_feature(feature: Feature) -> dynamic.Dynamic {
       #("geometry", geometry_dyn),
       #("properties", properties_dyn),
     ])
-  let obj = case id_opt {
-    option.Some(id) -> dict.insert(base_obj, "id", encode_feature_id(id))
+  case id_opt {
+    option.Some(StringId(id)) -> dict.insert(base_obj, "id", dynamic.from(id))
+    option.Some(NumberId(id)) -> dict.insert(base_obj, "id", dynamic.from(id))
     option.None -> base_obj
   }
-  dynamic.from(obj)
-}
-
-/// Encodes a FeatureId into a dynamic value.
-fn encode_feature_id(id: FeatureId) -> dynamic.Dynamic {
-  case id {
-    StringId(s) -> dynamic.from(s)
-    NumberId(n) -> dynamic.from(n)
-  }
+  |> dynamic.from
 }
 
 /// Encodes a feature collection into a dynamic value.
-pub fn encode_featurecollection(
-  collection: FeatureCollection,
-) -> dynamic.Dynamic {
+fn encode_featurecollection(collection: FeatureCollection) -> dynamic.Dynamic {
   let FeatureCollection(features) = collection
   let features_dyn_list = list.map(features, encode_feature)
-  let obj =
-    dict.from_list([
-      #("type", dynamic.from("FeatureCollection")),
-      #("features", dynamic.from(features_dyn_list)),
-    ])
-  dynamic.from(obj)
+  dict.from_list([
+    #("type", dynamic.from("FeatureCollection")),
+    #("features", dynamic.from(features_dyn_list)),
+  ])
+  |> dynamic.from
 }
 
 /// Encodes a GeoJSON object into a dynamic value.
+///
+/// ## Example
+///
+/// ```gleam
+/// let point = GeoJSONGeometry(Point([0.0, 0.0]))
+/// let encoded = encode_geojson(point)
+/// // encoded will be a dynamic representation of the GeoJSON object
+/// ```
 pub fn encode_geojson(geojson: GeoJSON) -> dynamic.Dynamic {
   case geojson {
     GeoJSONGeometry(geometry) -> encode_geometry(geometry)
@@ -279,357 +170,183 @@ pub fn encode_geojson(geojson: GeoJSON) -> dynamic.Dynamic {
 // Decoding Functions
 
 /// Decodes a position from a dynamic value.
-pub fn position_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn position_decoder(
+  dyn_value: dynamic.Dynamic,
 ) -> Result(Position, List(dynamic.DecodeError)) {
-  dynamic.list(of: dynamic.float)(dynamic_value)
+  dynamic.list(of: dynamic.float)(dyn_value)
 }
 
 /// Decodes a list of positions from a dynamic value.
-pub fn positions_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn positions_decoder(
+  dyn_value: dynamic.Dynamic,
 ) -> Result(List(Position), List(dynamic.DecodeError)) {
-  dynamic.list(of: position_decoder)(dynamic_value)
+  dynamic.list(of: position_decoder)(dyn_value)
 }
 
 /// Decodes a list of lists of positions from a dynamic value.
-pub fn positions_list_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn positions_list_decoder(
+  dyn_value: dynamic.Dynamic,
 ) -> Result(List(List(Position)), List(dynamic.DecodeError)) {
-  dynamic.list(of: positions_decoder)(dynamic_value)
+  dynamic.list(of: positions_decoder)(dyn_value)
 }
 
 /// Decodes a list of lists of lists of positions from a dynamic value.
-pub fn positions_list_list_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn positions_list_list_decoder(
+  dyn_value: dynamic.Dynamic,
 ) -> Result(List(List(List(Position))), List(dynamic.DecodeError)) {
-  dynamic.list(of: positions_list_decoder)(dynamic_value)
-}
-
-/// Decodes a point from a dynamic value.
-pub fn point_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(Point, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "Point" ->
-        dynamic.field(named: "coordinates", of: position_decoder)(dynamic_value)
-        |> result.map(Point)
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "Point", found: type_str, path: ["type"]),
-        ])
-    }
-  })
-}
-
-/// Decodes a multi-point from a dynamic value.
-pub fn multipoint_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(MultiPoint, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "MultiPoint" ->
-        dynamic.field(named: "coordinates", of: positions_decoder)(
-          dynamic_value,
-        )
-        |> result.map(MultiPoint)
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "MultiPoint", found: type_str, path: [
-            "type",
-          ]),
-        ])
-    }
-  })
-}
-
-/// Decodes a line string from a dynamic value.
-pub fn linestring_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(LineString, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "LineString" ->
-        dynamic.field(named: "coordinates", of: positions_decoder)(
-          dynamic_value,
-        )
-        |> result.map(LineString)
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "LineString", found: type_str, path: [
-            "type",
-          ]),
-        ])
-    }
-  })
-}
-
-/// Decodes a multi-line string from a dynamic value.
-pub fn multilinestring_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(MultiLineString, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "MultiLineString" ->
-        dynamic.field(named: "coordinates", of: positions_list_decoder)(
-          dynamic_value,
-        )
-        |> result.map(MultiLineString)
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "MultiLineString",
-            found: type_str,
-            path: ["type"],
-          ),
-        ])
-    }
-  })
-}
-
-/// Decodes a polygon from a dynamic value.
-pub fn polygon_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(Polygon, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "Polygon" ->
-        dynamic.field(named: "coordinates", of: positions_list_decoder)(
-          dynamic_value,
-        )
-        |> result.map(Polygon)
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "Polygon", found: type_str, path: [
-            "type",
-          ]),
-        ])
-    }
-  })
-}
-
-/// Decodes a multi-polygon from a dynamic value.
-pub fn multipolygon_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(MultiPolygon, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "MultiPolygon" ->
-        dynamic.field(named: "coordinates", of: positions_list_list_decoder)(
-          dynamic_value,
-        )
-        |> result.map(MultiPolygon)
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "MultiPolygon", found: type_str, path: [
-            "type",
-          ]),
-        ])
-    }
-  })
-}
-
-/// Decodes a geometry collection from a dynamic value.
-pub fn geometrycollection_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(GeometryCollection, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "GeometryCollection" ->
-        dynamic.field(
-          named: "geometries",
-          of: dynamic.list(of: geometry_decoder),
-        )(dynamic_value)
-        |> result.map(GeometryCollection)
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "GeometryCollection",
-            found: type_str,
-            path: ["type"],
-          ),
-        ])
-    }
-  })
+  dynamic.list(of: positions_list_decoder)(dyn_value)
 }
 
 /// Decodes a geometry from a dynamic value.
-pub fn geometry_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn geometry_decoder(
+  dyn_value: dynamic.Dynamic,
 ) -> Result(Geometry, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "Point" ->
-        point_decoder(dynamic_value)
-        |> result.map(GeometryPoint)
-      "MultiPoint" ->
-        multipoint_decoder(dynamic_value)
-        |> result.map(GeometryMultiPoint)
-      "LineString" ->
-        linestring_decoder(dynamic_value)
-        |> result.map(GeometryLineString)
-      "MultiLineString" ->
-        multilinestring_decoder(dynamic_value)
-        |> result.map(GeometryMultiLineString)
-      "Polygon" ->
-        polygon_decoder(dynamic_value)
-        |> result.map(GeometryPolygon)
-      "MultiPolygon" ->
-        multipolygon_decoder(dynamic_value)
-        |> result.map(GeometryMultiPolygon)
-      "GeometryCollection" ->
-        geometrycollection_decoder(dynamic_value)
-        |> result.map(GeometryGeometryCollection)
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "Known Geometry Type",
-            found: type_str,
-            path: ["type"],
-          ),
-        ])
-    }
-  })
-}
-
-/// Decodes a feature from a dynamic value.
-pub fn feature_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(Feature, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "Feature" -> {
-        let geometry_result =
-          dynamic.field(
-            named: "geometry",
-            of: dynamic.optional(geometry_decoder),
-          )(dynamic_value)
-
-        let properties_result =
-          dynamic.field(
-            named: "properties",
-            of: dynamic.optional(dynamic.dict(dynamic.string, dynamic.dynamic)),
-          )(dynamic_value)
-          |> result.map_error(fn(_errs) {
-            [
-              dynamic.DecodeError(
-                expected: "Properties",
-                found: "Invalid",
-                path: ["properties"],
-              ),
-            ]
-          })
-
-        let id_result =
-          dynamic.optional_field(named: "id", of: feature_id_decoder)(
-            dynamic_value,
-          )
-          |> result.map_error(fn(_errs) {
-            [
-              dynamic.DecodeError(expected: "ID", found: "Invalid", path: ["id"]),
-            ]
-          })
-
-        let geometry_result =
-          geometry_result
-          |> result.map_error(fn(_errs) {
-            [
-              dynamic.DecodeError(expected: "Geometry", found: "Invalid", path: [
-                "geometry",
-              ]),
-            ]
-          })
-
-        result.try(geometry_result, fn(geometry_opt) {
-          result.try(properties_result, fn(properties_opt) {
-            result.map(id_result, fn(id_opt) {
-              Feature(geometry_opt, properties_opt, id_opt)
-            })
-          })
-        })
-      }
-
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "Feature", found: type_str, path: [
-            "type",
-          ]),
-        ])
-    }
-  })
+  use type_str <- result.try(decode_type_field(dyn_value))
+  case type_str {
+    "Point" ->
+      dynamic.field(named: "coordinates", of: position_decoder)(dyn_value)
+      |> result.map(Point)
+    "MultiPoint" ->
+      dynamic.field(named: "coordinates", of: positions_decoder)(dyn_value)
+      |> result.map(MultiPoint)
+    "LineString" ->
+      dynamic.field(named: "coordinates", of: positions_decoder)(dyn_value)
+      |> result.map(LineString)
+    "MultiLineString" ->
+      dynamic.field(named: "coordinates", of: positions_list_decoder)(dyn_value)
+      |> result.map(MultiLineString)
+    "Polygon" ->
+      dynamic.field(named: "coordinates", of: positions_list_decoder)(dyn_value)
+      |> result.map(Polygon)
+    "MultiPolygon" ->
+      dynamic.field(named: "coordinates", of: positions_list_list_decoder)(
+        dyn_value,
+      )
+      |> result.map(MultiPolygon)
+    "GeometryCollection" ->
+      dynamic.field(named: "geometries", of: dynamic.list(of: geometry_decoder))(
+        dyn_value,
+      )
+      |> result.map(GeometryCollection)
+    _ ->
+      Error([
+        dynamic.DecodeError(
+          expected: "Known Geometry Type",
+          found: type_str,
+          path: ["type"],
+        ),
+      ])
+  }
 }
 
 /// Decodes a FeatureId from a dynamic value.
 fn feature_id_decoder(
-  dynamic_value: dynamic.Dynamic,
+  dyn_value: dynamic.Dynamic,
 ) -> Result(FeatureId, List(dynamic.DecodeError)) {
-  case dynamic.string(dynamic_value) {
-    Ok(s) -> Ok(StringId(s))
-    Error(_) ->
-      case dynamic.float(dynamic_value) {
-        Ok(n) -> Ok(NumberId(n))
-        Error(_) ->
-          Error([
-            dynamic.DecodeError(
-              expected: "String or Number",
-              found: dynamic.classify(dynamic_value),
-              path: [],
-            ),
-          ])
-      }
+  dynamic.string(dyn_value)
+  |> result.map(StringId)
+  |> result.lazy_or(fn() { dynamic.float(dyn_value) |> result.map(NumberId) })
+}
+
+/// Decodes a feature from a dynamic value.
+fn feature_decoder(
+  dyn_value: dynamic.Dynamic,
+) -> Result(Feature, List(dynamic.DecodeError)) {
+  use type_str <- result.try(decode_type_field(dyn_value))
+  case type_str {
+    "Feature" -> {
+      let geometry_result =
+        dynamic.field(named: "geometry", of: dynamic.optional(geometry_decoder))(
+          dyn_value,
+        )
+
+      let properties_result =
+        dynamic.field(
+          named: "properties",
+          of: dynamic.optional(dynamic.dict(dynamic.string, dynamic.dynamic)),
+        )(dyn_value)
+        |> result.map_error(fn(_errs) {
+          [
+            dynamic.DecodeError(expected: "Properties", found: "Invalid", path: [
+              "properties",
+            ]),
+          ]
+        })
+
+      let id_result =
+        dynamic.optional_field(named: "id", of: feature_id_decoder)(dyn_value)
+        |> result.map_error(fn(_errs) {
+          [dynamic.DecodeError(expected: "ID", found: "Invalid", path: ["id"])]
+        })
+
+      let geometry_result =
+        geometry_result
+        |> result.map_error(fn(_errs) {
+          [
+            dynamic.DecodeError(expected: "Geometry", found: "Invalid", path: [
+              "geometry",
+            ]),
+          ]
+        })
+
+      use geometry_opt <- result.try(geometry_result)
+      use properties_opt <- result.try(properties_result)
+      use id_opt <- result.try(id_result)
+      Ok(Feature(geometry_opt, properties_opt, id_opt))
+    }
+
+    _ ->
+      Error([
+        dynamic.DecodeError(expected: "Feature", found: type_str, path: ["type"]),
+      ])
   }
 }
 
 /// Decodes a feature collection from a dynamic value.
-pub fn featurecollection_decoder(
-  dynamic_value: dynamic.Dynamic,
+fn featurecollection_decoder(
+  dyn_value,
 ) -> Result(FeatureCollection, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "FeatureCollection" ->
-        dynamic.field(named: "features", of: dynamic.list(of: feature_decoder))(
-          dynamic_value,
-        )
-        |> result.map(FeatureCollection)
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "FeatureCollection",
-            found: type_str,
-            path: ["type"],
-          ),
-        ])
-    }
-  })
+  use type_str <- result.try(decode_type_field(dyn_value))
+  case type_str {
+    "FeatureCollection" ->
+      dynamic.field(named: "features", of: dynamic.list(of: feature_decoder))(
+        dyn_value,
+      )
+      |> result.map(FeatureCollection)
+    _ ->
+      Error([
+        dynamic.DecodeError(
+          expected: "FeatureCollection",
+          found: type_str,
+          path: ["type"],
+        ),
+      ])
+  }
 }
 
 /// Decodes a GeoJSON object from a dynamic value.
-pub fn geojson_decoder(
-  dynamic_value: dynamic.Dynamic,
-) -> Result(GeoJSON, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dynamic_value)
-  |> result.then(fn(type_str) {
-    case type_str {
-      "Feature" ->
-        feature_decoder(dynamic_value)
-        |> result.map(GeoJSONFeature)
-      "FeatureCollection" ->
-        featurecollection_decoder(dynamic_value)
-        |> result.map(GeoJSONFeatureCollection)
-      _ ->
-        geometry_decoder(dynamic_value)
-        |> result.map(GeoJSONGeometry)
-    }
-  })
+///
+/// ## Example
+///
+/// ```gleam
+/// let json_string = "{\"type\":\"Point\",\"coordinates\":[0.0,0.0]}"
+/// let decoded = json.decode(json_string)
+///   |> result.then(geojson_decoder)
+/// // decoded will be Ok(GeoJSONGeometry(Point([0.0, 0.0]))) if successful
+/// ```
+///
+/// Note: This function expects a valid GeoJSON structure. Invalid or incomplete
+/// GeoJSON data will result in a decode error.
+pub fn geojson_decoder(dyn_value) -> Result(GeoJSON, List(dynamic.DecodeError)) {
+  use type_str <- result.try(decode_type_field(dyn_value))
+  case type_str {
+    "Feature" -> result.map(feature_decoder(dyn_value), GeoJSONFeature)
+    "FeatureCollection" ->
+      result.map(featurecollection_decoder(dyn_value), GeoJSONFeatureCollection)
+    _ -> result.map(geometry_decoder(dyn_value), GeoJSONGeometry)
+  }
+}
+
+fn decode_type_field(dyn_value) -> Result(String, List(dynamic.DecodeError)) {
+  dynamic.field(named: "type", of: dynamic.string)(dyn_value)
 }

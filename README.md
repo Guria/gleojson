@@ -5,6 +5,8 @@
 
 **gleojson** is a GeoJSON parsing and encoding library for Gleam, following the [RFC 7946](https://tools.ietf.org/html/rfc7946) specification. It provides types and utility functions to encode and decode GeoJSON objects such as Points, LineStrings, Polygons, and more.
 
+**Note:** This package is currently in development and has not reached version 1.0.0 yet. The API is considered unstable and may undergo breaking changes in future releases. Please use with caution in production environments and expect potential updates that might require code changes.
+
 ## Installation
 
 Add **gleojson** to your Gleam project:
