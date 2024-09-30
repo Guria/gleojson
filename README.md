@@ -34,9 +34,6 @@ pub fn main() {
   case result {
     Ok(geojson) -> {
       // Successfully decoded GeoJSON
-      let encoded = gleojson.encode_geojson(geojson)
-      // encoded is now a Dynamic representation of the GeoJSON object
-      // You can use it for further processing or encoding back to JSON
     }
     Error(errors) -> {
       todo
@@ -44,6 +41,20 @@ pub fn main() {
       // errors contains information about what went wrong during decoding
     }
   }
+
+  // Construct GeoJSON from types
+  let geojson = gleojson.GeoJSONFeatureCollection(
+    gleojson.FeatureCollection([
+      gleojson.Feature(
+        geometry: option.Some(gleojson.Point([1.0, 2.0])),
+        properties: option.None,
+        id: option.Some(gleojson.StringId("feature-id")),
+      ),
+    ]),
+  )
+
+  // Encode to JSON string
+  gleojson.encode_geojson(geojson) |> json.to_string
 }
 ```
 

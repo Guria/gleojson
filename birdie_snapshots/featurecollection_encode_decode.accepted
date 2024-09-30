@@ -1,0 +1,5 @@
+---
+version: 1.2.3
+title: featurecollection_encode_decode
+---
+{"type":"FeatureCollection","features":[{"id":"feature-id","type":"Feature","geometry":{"type":"Point","coordinates":[1.0,2.0]},"properties":null}]}
