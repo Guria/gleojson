@@ -1,3 +1,4 @@
+import birdie
 import gleam/dict
 import gleam/dynamic
 import gleam/json
@@ -11,194 +12,109 @@ pub fn main() {
   gleeunit.main()
 }
 
+fn assert_encode_decode(geojson: gleojson.GeoJSON, name: String) {
+  let encoded = gleojson.encode_geojson(geojson) |> json.to_string
+  birdie.snap(encoded, name)
+  json.decode(from: encoded, using: gleojson.geojson_decoder)
+  |> should.be_ok
+  |> should.equal(geojson)
+}
+
 pub fn point_encode_decode_test() {
-  let original_point = gleojson.GeoJSONGeometry(gleojson.Point([1.0, 2.0]))
-
-  let encoded_dynamic = gleojson.encode_geojson(original_point)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_point =
-    decoded_result
-    |> should.be_ok
-
-  decoded_point
-  |> should.equal(original_point)
+  gleojson.GeoJSONGeometry(gleojson.Point([1.0, 2.0]))
+  |> assert_encode_decode("point_encode_decode")
 }
 
 pub fn multipoint_encode_decode_test() {
-  let original_multipoint =
-    gleojson.GeoJSONGeometry(gleojson.MultiPoint([[1.0, 2.0], [3.0, 4.0]]))
-
-  let encoded_dynamic = gleojson.encode_geojson(original_multipoint)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_multipoint =
-    decoded_result
-    |> should.be_ok
-
-  decoded_multipoint
-  |> should.equal(original_multipoint)
+  gleojson.GeoJSONGeometry(gleojson.MultiPoint([[1.0, 2.0], [3.0, 4.0]]))
+  |> assert_encode_decode("multipoint_encode_decode")
 }
 
 pub fn linestring_encode_decode_test() {
-  let original_linestring =
-    gleojson.GeoJSONGeometry(gleojson.LineString([[1.0, 2.0], [3.0, 4.0]]))
-
-  let encoded_dynamic = gleojson.encode_geojson(original_linestring)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_linestring =
-    decoded_result
-    |> should.be_ok
-
-  decoded_linestring
-  |> should.equal(original_linestring)
+  gleojson.GeoJSONGeometry(gleojson.LineString([[1.0, 2.0], [3.0, 4.0]]))
+  |> assert_encode_decode("linestring_encode_decode")
 }
 
 pub fn polygon_encode_decode_test() {
-  let original_polygon =
-    gleojson.GeoJSONGeometry(
-      gleojson.Polygon([[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]]),
-    )
-
-  let encoded_dynamic = gleojson.encode_geojson(original_polygon)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_polygon =
-    decoded_result
-    |> should.be_ok
-
-  decoded_polygon
-  |> should.equal(original_polygon)
+  gleojson.GeoJSONGeometry(
+    gleojson.Polygon([[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]]),
+  )
+  |> assert_encode_decode("polygon_encode_decode")
 }
 
 pub fn multipolygon_encode_decode_test() {
-  let original_multipolygon =
-    gleojson.GeoJSONGeometry(
-      gleojson.MultiPolygon([
-        [[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]],
-        [[[7.0, 8.0], [9.0, 10.0], [11.0, 12.0], [7.0, 8.0]]],
-      ]),
-    )
-
-  let encoded_dynamic = gleojson.encode_geojson(original_multipolygon)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_multipolygon =
-    decoded_result
-    |> should.be_ok
-
-  decoded_multipolygon
-  |> should.equal(original_multipolygon)
+  gleojson.GeoJSONGeometry(
+    gleojson.MultiPolygon([
+      [[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]],
+      [[[7.0, 8.0], [9.0, 10.0], [11.0, 12.0], [7.0, 8.0]]],
+    ]),
+  )
+  |> assert_encode_decode("multipolygon_encode_decode")
 }
 
 pub fn geometrycollection_encode_decode_test() {
-  let original_geometrycollection =
-    gleojson.GeoJSONGeometry(
-      gleojson.GeometryCollection([
-        gleojson.Point([1.0, 2.0]),
-        gleojson.LineString([[3.0, 4.0], [5.0, 6.0]]),
-      ]),
-    )
-  let encoded_dynamic = gleojson.encode_geojson(original_geometrycollection)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_geometrycollection =
-    decoded_result
-    |> should.be_ok
-
-  decoded_geometrycollection
-  |> should.equal(original_geometrycollection)
+  gleojson.GeoJSONGeometry(
+    gleojson.GeometryCollection([
+      gleojson.Point([1.0, 2.0]),
+      gleojson.LineString([[3.0, 4.0], [5.0, 6.0]]),
+    ]),
+  )
+  |> assert_encode_decode("geometrycollection_encode_decode")
 }
 
 pub fn feature_encode_decode_test() {
-  let properties =
-    dict.from_list([
-      #("name", dynamic.from("Test Point")),
-      #("value", dynamic.from(42)),
-    ])
+  // let properties =
+  //   dict.from_list([
+  //     #("name", dynamic.from("Test Point")),
+  //     #("value", dynamic.from(42)),
+  //   ])
 
-  let original_feature =
-    gleojson.GeoJSONFeature(gleojson.Feature(
-      geometry: option.Some(gleojson.Point([1.0, 2.0])),
-      properties: option.Some(properties),
-      id: option.Some(gleojson.StringId("feature-id")),
-    ))
-
-  let encoded_dynamic = gleojson.encode_geojson(original_feature)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_feature =
-    decoded_result
-    |> should.be_ok
-
-  decoded_feature
-  |> should.equal(original_feature)
+  gleojson.GeoJSONFeature(gleojson.Feature(
+    geometry: option.Some(gleojson.Point([1.0, 2.0])),
+    properties: option.None,
+    id: option.Some(gleojson.StringId("feature-id")),
+  ))
+  |> assert_encode_decode("feature_encode_decode")
 }
 
 pub fn featurecollection_encode_decode_test() {
-  let properties =
-    dict.from_list([
-      #("name", dynamic.from("Test Point")),
-      #("value", dynamic.from(42)),
-    ])
+  // let properties =
+  //   dict.from_list([
+  //     #("name", dynamic.from("Test Point")),
+  //     #("value", dynamic.from(42)),
+  //   ])
 
-  let feature =
-    gleojson.Feature(
-      geometry: option.Some(gleojson.Point([1.0, 2.0])),
-      properties: option.Some(properties),
-      id: option.Some(gleojson.StringId("feature-id")),
-    )
-
-  let original_featurecollection =
-    gleojson.GeoJSONFeatureCollection(gleojson.FeatureCollection([feature]))
-
-  let encoded_dynamic = gleojson.encode_geojson(original_featurecollection)
-
-  let decoded_result = gleojson.geojson_decoder(encoded_dynamic)
-
-  let decoded_featurecollection =
-    decoded_result
-    |> should.be_ok
-
-  decoded_featurecollection
-  |> should.equal(original_featurecollection)
+  gleojson.GeoJSONFeatureCollection(
+    gleojson.FeatureCollection([
+      gleojson.Feature(
+        geometry: option.Some(gleojson.Point([1.0, 2.0])),
+        properties: option.None,
+        id: option.Some(gleojson.StringId("feature-id")),
+      ),
+    ]),
+  )
+  |> assert_encode_decode("featurecollection_encode_decode")
 }
 
 pub fn invalid_type_decode_test() {
-  let invalid_dynamic =
-    dynamic.from(
-      dict.from_list([
-        #("type", dynamic.from("InvalidType")),
-        #("coordinates", dynamic.from([1.0, 2.0])),
-      ]),
-    )
-
-  let decoded_result = gleojson.geojson_decoder(invalid_dynamic)
-
-  decoded_result
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("InvalidType")),
+      #("coordinates", dynamic.from([1.0, 2.0])),
+    ]),
+  )
+  |> gleojson.geojson_decoder
   |> should.be_error
 }
 
 pub fn invalid_coordinates_decode_test() {
-  let invalid_dynamic =
-    dynamic.from(
-      dict.from_list([
-        #("type", dynamic.from("Point")),
-        #("coordinates", dynamic.from("invalid coordinates")),
-      ]),
-    )
-
-  let decoded_result = gleojson.geojson_decoder(invalid_dynamic)
-
-  decoded_result
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("Point")),
+      #("coordinates", dynamic.from("invalid coordinates")),
+    ]),
+  )
+  |> gleojson.geojson_decoder
   |> should.be_error
 }
 

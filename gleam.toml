@@ -8,7 +8,8 @@ links = [{ title = "RFC7946", href = "https://datatracker.ietf.org/doc/html/rfc7
 
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
+gleam_json = ">= 2.0.0 and < 3.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
-gleam_json = ">= 2.0.0 and < 3.0.0"
+birdie = ">= 1.2.3 and < 2.0.0"

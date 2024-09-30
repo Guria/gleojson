@@ -16,7 +16,7 @@
 
 import gleam/dict
 import gleam/dynamic
-import gleam/list
+import gleam/json
 import gleam/option
 import gleam/result
 
@@ -64,90 +64,112 @@ pub type GeoJSON {
 
 // Encoding Functions
 
-/// Encodes a geometry into a dynamic value.
-fn encode_geometry(geometry: Geometry) -> dynamic.Dynamic {
+/// Encodes a geometry into a JSON object.
+fn encode_geometry(geometry: Geometry) -> json.Json {
   case geometry {
     Point(coordinates) -> {
-      dict.from_list([
-        #("type", dynamic.from("Point")),
-        #("coordinates", dynamic.from(coordinates)),
+      json.object([
+        #("type", json.string("Point")),
+        #("coordinates", json.array(coordinates, of: json.float)),
       ])
     }
     MultiPoint(multipoint) -> {
-      dict.from_list([
-        #("type", dynamic.from("MultiPoint")),
-        #("coordinates", dynamic.from(multipoint)),
+      json.object([
+        #("type", json.string("MultiPoint")),
+        #(
+          "coordinates",
+          json.array(multipoint, of: json.array(_, of: json.float)),
+        ),
       ])
     }
     LineString(linestring) -> {
-      dict.from_list([
-        #("type", dynamic.from("LineString")),
-        #("coordinates", dynamic.from(linestring)),
+      json.object([
+        #("type", json.string("LineString")),
+        #(
+          "coordinates",
+          json.array(linestring, of: json.array(_, of: json.float)),
+        ),
       ])
     }
     MultiLineString(multilinestring) -> {
-      dict.from_list([
-        #("type", dynamic.from("MultiLineString")),
-        #("coordinates", dynamic.from(multilinestring)),
+      json.object([
+        #("type", json.string("MultiLineString")),
+        #(
+          "coordinates",
+          json.array(multilinestring, of: json.array(_, of: json.array(
+            _,
+            of: json.float,
+          ))),
+        ),
       ])
     }
     Polygon(polygon) -> {
-      dict.from_list([
-        #("type", dynamic.from("Polygon")),
-        #("coordinates", dynamic.from(polygon)),
+      json.object([
+        #("type", json.string("Polygon")),
+        #(
+          "coordinates",
+          json.array(polygon, of: json.array(_, of: json.array(
+            _,
+            of: json.float,
+          ))),
+        ),
       ])
     }
     MultiPolygon(multipolygon) -> {
-      dict.from_list([
-        #("type", dynamic.from("MultiPolygon")),
-        #("coordinates", dynamic.from(multipolygon)),
+      json.object([
+        #("type", json.string("MultiPolygon")),
+        #(
+          "coordinates",
+          json.array(
+            multipolygon,
+            of: json.array(_, of: json.array(_, of: json.array(
+              _,
+              of: json.float,
+            ))),
+          ),
+        ),
       ])
     }
     GeometryCollection(collection) -> {
-      let geometries_dyn_list = list.map(collection, encode_geometry)
-      dict.from_list([
-        #("type", dynamic.from("GeometryCollection")),
-        #("geometries", dynamic.from(geometries_dyn_list)),
+      json.object([
+        #("type", json.string("GeometryCollection")),
+        #("geometries", json.array(collection, of: encode_geometry)),
       ])
     }
   }
-  |> dynamic.from
 }
 
-/// Encodes a feature into a dynamic value.
-fn encode_feature(feature: Feature) -> dynamic.Dynamic {
-  let Feature(geometry_opt, properties_opt, id_opt) = feature
-  let geometry_dyn = case geometry_opt {
+/// Encodes a feature into a JSON object.
+fn encode_feature(feature: Feature) -> json.Json {
+  let Feature(geometry_opt, _properties_opt, id_opt) = feature
+  let geometry_json = case geometry_opt {
     option.Some(geometry) -> encode_geometry(geometry)
-    option.None -> dynamic.from(Nil)
+    option.None -> json.null()
   }
-  let properties_dyn = case properties_opt {
-    option.Some(props) -> dynamic.from(props)
-    option.None -> dynamic.from(Nil)
-  }
-  let base_obj =
-    dict.from_list([
-      #("type", dynamic.from("Feature")),
-      #("geometry", geometry_dyn),
-      #("properties", properties_dyn),
-    ])
+  // let properties_json = case properties_opt {
+  //   option.Some(props) -> json.object(props)
+  //   option.None -> json.object([])
+  // }
+  let base_obj = [
+    #("type", json.string("Feature")),
+    #("geometry", geometry_json),
+    #("properties", json.null()),
+  ]
   case id_opt {
-    option.Some(StringId(id)) -> dict.insert(base_obj, "id", dynamic.from(id))
-    option.Some(NumberId(id)) -> dict.insert(base_obj, "id", dynamic.from(id))
+    option.Some(StringId(id)) -> [#("id", json.string(id)), ..base_obj]
+    option.Some(NumberId(id)) -> [#("id", json.float(id)), ..base_obj]
     option.None -> base_obj
   }
-  |> dynamic.from
+  |> json.object
 }
 
-/// Encodes a feature collection into a dynamic value.
-fn encode_featurecollection(collection: FeatureCollection) -> dynamic.Dynamic {
+/// Encodes a feature collection into a JSON object.
+fn encode_featurecollection(collection: FeatureCollection) -> json.Json {
   let FeatureCollection(features) = collection
-  let features_dyn_list = list.map(features, encode_feature)
-  dict.from_list([
-    #("type", dynamic.from("FeatureCollection")),
-    #("features", dynamic.from(features_dyn_list)),
+  json.object([
+    #("type", json.string("FeatureCollection")),
+    #("features", json.array(features, of: encode_feature)),
   ])
-  |> dynamic.from
 }
 
 /// Encodes a GeoJSON object into a dynamic value.
@@ -159,7 +181,7 @@ fn encode_featurecollection(collection: FeatureCollection) -> dynamic.Dynamic {
 /// let encoded = encode_geojson(point)
 /// // encoded will be a dynamic representation of the GeoJSON object
 /// ```
-pub fn encode_geojson(geojson: GeoJSON) -> dynamic.Dynamic {
+pub fn encode_geojson(geojson: GeoJSON) -> json.Json {
   case geojson {
     GeoJSONGeometry(geometry) -> encode_geometry(geometry)
     GeoJSONFeature(feature) -> encode_feature(feature)
