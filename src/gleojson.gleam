@@ -14,9 +14,10 @@
 ////
 //// Then you can use the provided functions to encode and decode GeoJSON data.
 
-import gleam/dict
 import gleam/dynamic
 import gleam/json
+
+// import gleam/list
 import gleam/option
 import gleam/result
 
@@ -42,24 +43,24 @@ pub type FeatureId {
 }
 
 /// A feature in a GeoJSON object, consisting of a geometry, properties, and an optional id.
-pub type Feature {
+pub type Feature(properties) {
   Feature(
     geometry: option.Option(Geometry),
-    properties: option.Option(dict.Dict(String, dynamic.Dynamic)),
+    properties: option.Option(properties),
     id: option.Option(FeatureId),
   )
 }
 
 /// A collection of features in a GeoJSON object.
-pub type FeatureCollection {
-  FeatureCollection(features: List(Feature))
+pub type FeatureCollection(properties) {
+  FeatureCollection(features: List(Feature(properties)))
 }
 
 /// A GeoJSON object.
-pub type GeoJSON {
+pub type GeoJSON(properties) {
   GeoJSONGeometry(Geometry)
-  GeoJSONFeature(Feature)
-  GeoJSONFeatureCollection(FeatureCollection)
+  GeoJSONFeature(Feature(properties))
+  GeoJSONFeatureCollection(FeatureCollection(properties))
 }
 
 // Encoding Functions
@@ -67,13 +68,12 @@ pub type GeoJSON {
 /// Encodes a geometry into a JSON object.
 fn encode_geometry(geometry: Geometry) -> json.Json {
   case geometry {
-    Point(coordinates) -> {
+    Point(coordinates) ->
       json.object([
         #("type", json.string("Point")),
         #("coordinates", json.array(coordinates, of: json.float)),
       ])
-    }
-    MultiPoint(multipoint) -> {
+    MultiPoint(multipoint) ->
       json.object([
         #("type", json.string("MultiPoint")),
         #(
@@ -81,8 +81,7 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
           json.array(multipoint, of: json.array(_, of: json.float)),
         ),
       ])
-    }
-    LineString(linestring) -> {
+    LineString(linestring) ->
       json.object([
         #("type", json.string("LineString")),
         #(
@@ -90,8 +89,7 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
           json.array(linestring, of: json.array(_, of: json.float)),
         ),
       ])
-    }
-    MultiLineString(multilinestring) -> {
+    MultiLineString(multilinestring) ->
       json.object([
         #("type", json.string("MultiLineString")),
         #(
@@ -102,8 +100,7 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
           ))),
         ),
       ])
-    }
-    Polygon(polygon) -> {
+    Polygon(polygon) ->
       json.object([
         #("type", json.string("Polygon")),
         #(
@@ -114,8 +111,7 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
           ))),
         ),
       ])
-    }
-    MultiPolygon(multipolygon) -> {
+    MultiPolygon(multipolygon) ->
       json.object([
         #("type", json.string("MultiPolygon")),
         #(
@@ -129,63 +125,77 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
           ),
         ),
       ])
-    }
-    GeometryCollection(collection) -> {
+    GeometryCollection(collection) ->
       json.object([
         #("type", json.string("GeometryCollection")),
         #("geometries", json.array(collection, of: encode_geometry)),
       ])
-    }
   }
 }
 
 /// Encodes a feature into a JSON object.
-fn encode_feature(feature: Feature) -> json.Json {
-  let Feature(geometry_opt, _properties_opt, id_opt) = feature
+fn encode_feature(
+  properties_encoder: fn(properties) -> json.Json,
+  feature: Feature(properties),
+) -> json.Json {
+  let Feature(geometry_opt, properties_opt, id_opt) = feature
   let geometry_json = case geometry_opt {
     option.Some(geometry) -> encode_geometry(geometry)
     option.None -> json.null()
   }
-  // let properties_json = case properties_opt {
-  //   option.Some(props) -> json.object(props)
-  //   option.None -> json.object([])
-  // }
+  let properties_json = case properties_opt {
+    option.Some(props) -> properties_encoder(props)
+    option.None -> json.null()
+  }
+
   let base_obj = [
     #("type", json.string("Feature")),
     #("geometry", geometry_json),
-    #("properties", json.null()),
+    #("properties", properties_json),
   ]
-  case id_opt {
+  let full_obj = case id_opt {
     option.Some(StringId(id)) -> [#("id", json.string(id)), ..base_obj]
     option.Some(NumberId(id)) -> [#("id", json.float(id)), ..base_obj]
     option.None -> base_obj
   }
-  |> json.object
+  json.object(full_obj)
 }
 
 /// Encodes a feature collection into a JSON object.
-fn encode_featurecollection(collection: FeatureCollection) -> json.Json {
+fn encode_featurecollection(
+  properties_encoder: fn(properties) -> json.Json,
+  collection: FeatureCollection(properties),
+) -> json.Json {
   let FeatureCollection(features) = collection
   json.object([
     #("type", json.string("FeatureCollection")),
-    #("features", json.array(features, of: encode_feature)),
+    #(
+      "features",
+      json.array(features, of: fn(feature) {
+        encode_feature(properties_encoder, feature)
+      }),
+    ),
   ])
 }
 
-/// Encodes a GeoJSON object into a dynamic value.
+/// Encodes a GeoJSON object into a JSON value.
 ///
 /// ## Example
 ///
 /// ```gleam
 /// let point = GeoJSONGeometry(Point([0.0, 0.0]))
-/// let encoded = encode_geojson(point)
-/// // encoded will be a dynamic representation of the GeoJSON object
+/// let encoded = encode_geojson(point, properties_encoder)
+/// // encoded will be a JSON representation of the GeoJSON object
 /// ```
-pub fn encode_geojson(geojson: GeoJSON) -> json.Json {
+pub fn encode_geojson(
+  geojson: GeoJSON(properties),
+  properties_encoder: fn(properties) -> json.Json,
+) -> json.Json {
   case geojson {
     GeoJSONGeometry(geometry) -> encode_geometry(geometry)
-    GeoJSONFeature(feature) -> encode_feature(feature)
-    GeoJSONFeatureCollection(collection) -> encode_featurecollection(collection)
+    GeoJSONFeature(feature) -> encode_feature(properties_encoder, feature)
+    GeoJSONFeatureCollection(collection) ->
+      encode_featurecollection(properties_encoder, collection)
   }
 }
 
@@ -217,6 +227,12 @@ fn positions_list_list_decoder(
   dyn_value: dynamic.Dynamic,
 ) -> Result(List(List(List(Position))), List(dynamic.DecodeError)) {
   dynamic.list(of: positions_list_decoder)(dyn_value)
+}
+
+fn decode_type_field(
+  dyn_value: dynamic.Dynamic,
+) -> Result(String, List(dynamic.DecodeError)) {
+  dynamic.field(named: "type", of: dynamic.string)(dyn_value)
 }
 
 /// Decodes a geometry from a dynamic value.
@@ -272,8 +288,9 @@ fn feature_id_decoder(
 
 /// Decodes a feature from a dynamic value.
 fn feature_decoder(
+  properties_decoder: dynamic.Decoder(properties),
   dyn_value: dynamic.Dynamic,
-) -> Result(Feature, List(dynamic.DecodeError)) {
+) -> Result(Feature(properties), List(dynamic.DecodeError)) {
   use type_str <- result.try(decode_type_field(dyn_value))
   case type_str {
     "Feature" -> {
@@ -285,7 +302,7 @@ fn feature_decoder(
       let properties_result =
         dynamic.field(
           named: "properties",
-          of: dynamic.optional(dynamic.dict(dynamic.string, dynamic.dynamic)),
+          of: dynamic.optional(properties_decoder),
         )(dyn_value)
         |> result.map_error(fn(_errs) {
           [
@@ -326,14 +343,18 @@ fn feature_decoder(
 
 /// Decodes a feature collection from a dynamic value.
 fn featurecollection_decoder(
-  dyn_value,
-) -> Result(FeatureCollection, List(dynamic.DecodeError)) {
+  properties_decoder: dynamic.Decoder(properties),
+  dyn_value: dynamic.Dynamic,
+) -> Result(FeatureCollection(properties), List(dynamic.DecodeError)) {
   use type_str <- result.try(decode_type_field(dyn_value))
   case type_str {
     "FeatureCollection" ->
-      dynamic.field(named: "features", of: dynamic.list(of: feature_decoder))(
-        dyn_value,
-      )
+      dynamic.field(
+        named: "features",
+        of: dynamic.list(of: fn(dyn_value) {
+          feature_decoder(properties_decoder, dyn_value)
+        }),
+      )(dyn_value)
       |> result.map(FeatureCollection)
     _ ->
       Error([
@@ -353,22 +374,25 @@ fn featurecollection_decoder(
 /// ```gleam
 /// let json_string = "{\"type\":\"Point\",\"coordinates\":[0.0,0.0]}"
 /// let decoded = json.decode(json_string)
-///   |> result.then(geojson_decoder)
+///   |> result.then(fn dyn_value { geojson_decoder(properties_decoder, dyn_value) })
 /// // decoded will be Ok(GeoJSONGeometry(Point([0.0, 0.0]))) if successful
 /// ```
 ///
 /// Note: This function expects a valid GeoJSON structure. Invalid or incomplete
 /// GeoJSON data will result in a decode error.
-pub fn geojson_decoder(dyn_value) -> Result(GeoJSON, List(dynamic.DecodeError)) {
+pub fn geojson_decoder(
+  properties_decoder: dynamic.Decoder(properties),
+  dyn_value: dynamic.Dynamic,
+) -> Result(GeoJSON(properties), List(dynamic.DecodeError)) {
   use type_str <- result.try(decode_type_field(dyn_value))
   case type_str {
-    "Feature" -> result.map(feature_decoder(dyn_value), GeoJSONFeature)
+    "Feature" ->
+      result.map(feature_decoder(properties_decoder, dyn_value), GeoJSONFeature)
     "FeatureCollection" ->
-      result.map(featurecollection_decoder(dyn_value), GeoJSONFeatureCollection)
+      result.map(
+        featurecollection_decoder(properties_decoder, dyn_value),
+        GeoJSONFeatureCollection,
+      )
     _ -> result.map(geometry_decoder(dyn_value), GeoJSONGeometry)
   }
-}
-
-fn decode_type_field(dyn_value) -> Result(String, List(dynamic.DecodeError)) {
-  dynamic.field(named: "type", of: dynamic.string)(dyn_value)
 }

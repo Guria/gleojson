@@ -1,0 +1,5 @@
+---
+version: 1.2.3
+title: real_life_feature
+---
+{"id":"yosemite","type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-119.5383,37.8651],[-119.5127,37.8777],[-119.4939,37.8685],[-119.5383,37.8651]]]},"properties":{"name":"Yosemite National Park","area_sq_km":3029.87,"year_established":1890,"is_protected":true}}
