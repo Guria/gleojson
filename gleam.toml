@@ -1,5 +1,5 @@
 name = "gleojson"
-version = "0.1.0"
+version = "0.2.0"
 
 description = "A Gleam library for encoding and decoding GeoJSON"
 licences = ["MIT"]
