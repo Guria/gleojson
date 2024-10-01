@@ -8,7 +8,7 @@ This project is licensed under the MIT License. See the LICENSE file for the ful
 This project was bootstrapped with assistance from the OpenAI `o1-preview` model.
 It was used to scaffold basic types and encoder/decoder functions according to [RFC 7946](https://datatracker.ietf.org/doc/html/rfc7946).
 Manual edits were made to adjust the generated code to the actual Gleam language and to fix compilation errors.
-Captured assistance session could be found in initial commit message.
+Captured assistance session could be found in commit messages.
 
 Other AI models from different providers were used to provide suggestions, generate initial code structures, and assist in problem-solving during the early stages of development.
 
