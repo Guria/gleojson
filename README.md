@@ -3,9 +3,29 @@
 [![Package Version](https://img.shields.io/hexpm/v/gleojson)](https://hex.pm/packages/gleojson)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/gleojson/)
 
-**gleojson** is a GeoJSON parsing and encoding library for Gleam, following the [RFC 7946](https://tools.ietf.org/html/rfc7946) specification. It provides types and utility functions to encode and decode GeoJSON objects such as Points, LineStrings, Polygons, and more.
+**gleojson** is a comprehensive GeoJSON parsing and encoding library for Gleam, following the [RFC 7946](https://tools.ietf.org/html/rfc7946) specification. It provides robust types and utility functions to seamlessly encode and decode GeoJSON objects such as Points, LineStrings, Polygons, and more.
 
 **Note:** This package is currently in development and has not reached version 1.0.0 yet. The API is considered unstable and may undergo breaking changes in future releases. Please use with caution in production environments and expect potential updates that might require code changes.
+
+## Features
+
+- Full support for all GeoJSON object types: Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon, GeometryCollection, Feature, and FeatureCollection
+- Flexible encoding and decoding of GeoJSON objects
+- Custom property support for Feature and FeatureCollection objects
+- Type-safe representation of GeoJSON structures
+
+## Current Limitations
+
+While **gleojson** aims to fully implement the GeoJSON specification (RFC 7946), some features are still under development. Key areas for future improvement include:
+
+1. Coordinate validation
+1. Antimeridian and pole handling
+1. Bounding box support
+1. Right-hand rule enforcement for polygon orientation
+1. Position array length limitation
+1. GeometryCollection usage recommendations
+
+Despite these limitations, **gleojson** is fully functional for most common GeoJSON use cases.
 
 ## Installation
 
@@ -17,56 +37,51 @@ gleam add gleojson
 
 ## Usage
 
-```gleam
-pub fn main() {
-  let json_string = "{
-    \"type\": \"Feature\",
-    \"geometry\": {
-    \"type\": \"Point\",
-    \"coordinates\": [125.6, 10.1]
-    },
-    \"properties\": {
-    \"name\": \"Dinagat Islands\"
-    }
-  }"
-  // Decode the JSON string into a GeoJSON object
-  let result = json.decode(from: json_string, using: gleojson.geojson_decoder)
-  case result {
-    Ok(geojson) -> {
-      // Successfully decoded GeoJSON
-    }
-    Error(errors) -> {
-      todo
-      // Handle decoding errors
-      // errors contains information about what went wrong during decoding
-    }
-  }
+Here's a basic example of how to use gleojson:
 
-  // Construct GeoJSON from types
-  let geojson = gleojson.GeoJSONFeatureCollection(
-    gleojson.FeatureCollection([
-      gleojson.Feature(
-        geometry: option.Some(gleojson.Point([1.0, 2.0])),
-        properties: option.None,
-        id: option.Some(gleojson.StringId("feature-id")),
-      ),
-    ]),
+```gleam
+import gleojson
+import gleam/json
+import gleam/option
+import gleam/io
+
+pub fn main() {
+  // Create a Point geometry
+  let point = gleojson.Point([125.6, 10.1])
+
+  // Create a Feature with the Point geometry
+  let feature = gleojson.Feature(
+    geometry: option.Some(point),
+    properties: option.None,
+    id: option.Some(gleojson.StringId("example-point"))
   )
 
-  // Encode to JSON string
-  gleojson.encode_geojson(geojson) |> json.to_string
+  // Encode the Feature to GeoJSON
+  let geojson = gleojson.GeoJSONFeature(feature)
+  let encoded = gleojson.encode_geojson(geojson, gleojson.properties_null_encoder)
+
+  // Print the encoded GeoJSON
+  io.println(json.to_string(encoded))
 }
 ```
 
-Further documentation can be found at https://hexdocs.pm/gleojson.
+For more advanced usage, including custom properties and decoding, see the [documentation](https://hexdocs.pm/gleojson).
 
 ## Development
 
-```
+To build and test the project:
+
+```sh
 gleam build
 gleam test
 ```
 
+## Contributing
+
+Contributions to gleojson are welcome! Please feel free to submit a Pull Request. Before contributing, please review our [contribution guidelines](CONTRIBUTING.md).
+
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+Please see the [NOTICE](NOTICE) file for information about third party components and the use of AI assistance in this project.
