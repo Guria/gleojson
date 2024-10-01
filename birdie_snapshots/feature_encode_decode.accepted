@@ -2,4 +2,4 @@
 version: 1.2.3
 title: feature_encode_decode
 ---
-{"id":"feature-id","type":"Feature","geometry":{"type":"Point","coordinates":[1.0,2.0]},"properties":null}
+{"id":"feature-id","type":"Feature","geometry":{"type":"Point","coordinates":[1.0,2.0]},"properties":{"name":"Test Point","value":42.0}}

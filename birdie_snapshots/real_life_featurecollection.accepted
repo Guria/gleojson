@@ -1,0 +1,5 @@
+---
+version: 1.2.3
+title: real_life_featurecollection
+---
+{"type":"FeatureCollection","features":[{"id":"tokyo","type":"Feature","geometry":{"type":"Point","coordinates":[139.6917,35.6895]},"properties":{"name":"Tokyo","population":37435191,"timezone":"Asia/Tokyo","elevation":40.0}},{"id":"colorado-river","type":"Feature","geometry":{"type":"LineString","coordinates":[[-115.1728,36.1147],[-116.2139,36.5674],[-117.1522,36.6567]]},"properties":{"name":"Colorado River","length_km":2330.0,"countries":["USA","Mexico"]}}]}
