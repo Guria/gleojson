@@ -22,7 +22,6 @@ While **gleojson** aims to fully implement the GeoJSON specification (RFC 7946),
 1. Antimeridian and pole handling
 1. Bounding box support
 1. Right-hand rule enforcement for polygon orientation
-1. Position array length limitation
 1. GeometryCollection usage recommendations
 
 Despite these limitations, **gleojson** is fully functional for most common GeoJSON use cases.
@@ -47,7 +46,7 @@ import gleam/io
 
 pub fn main() {
   // Create a Point geometry
-  let point = gleojson.Point([125.6, 10.1])
+  let point = gleojson.Point(gleojson.position_2d(lon: 125.6, lat: 10.1))
 
   // Create a Feature with the Point geometry
   let feature = gleojson.Feature(

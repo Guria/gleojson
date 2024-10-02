@@ -1,26 +1,24 @@
-//// Functions for working with GeoJSON data.
-////
-//// This module provides types and functions for encoding and decoding GeoJSON data.
-//// It supports all GeoJSON object types including Point, MultiPoint, LineString,
-//// MultiLineString, Polygon, MultiPolygon, GeometryCollection, Feature, and FeatureCollection.
-////
-//// ## Usage
-////
-//// To use this module, you can import it in your Gleam code:
-////
-//// ```gleam
-//// import gleojson
-//// ```
-////
-//// Then you can use the provided functions to encode and decode GeoJSON data.
-
 import gleam/dynamic
 import gleam/json
 import gleam/option
 import gleam/result
 
-pub type Position =
-  List(Float)
+pub type Lon {
+  Lon(Float)
+}
+
+pub type Lat {
+  Lat(Float)
+}
+
+pub type Alt {
+  Alt(Float)
+}
+
+pub type Position {
+  Position2D(#(Lon, Lat))
+  Position3D(#(Lon, Lat, Alt))
+}
 
 pub type Geometry {
   Point(coordinates: Position)
@@ -55,29 +53,98 @@ pub type GeoJSON(properties) {
   GeoJSONFeatureCollection(FeatureCollection(properties))
 }
 
+/// Creates a 2D Position object from longitude and latitude values.
+///
+/// This function is a convenience helper for creating a Position object
+/// with two dimensions (longitude and latitude).
+///
+/// ## Arguments
+///
+/// - `lon`: The longitude value as a Float.
+/// - `lat`: The latitude value as a Float.
+///
+/// ## Returns
+///
+/// A Position object representing a 2D coordinate.
+///
+/// ## Example
+///
+/// ```gleam
+/// import gleojson
+///
+/// pub fn main() {
+///   let position = gleojson.position_2d(lon: 125.6, lat: 10.1)
+///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
+///   let point = gleojson.Point(coordinates: position)
+/// }
+/// ```
+pub fn position_2d(lon lon: Float, lat lat: Float) -> Position {
+  Position2D(#(Lon(lon), Lat(lat)))
+}
+
+/// Creates a 3D Position object from longitude, latitude, and altitude values.
+///
+/// This function is a convenience helper for creating a Position object
+/// with three dimensions (longitude, latitude, and altitude).
+///
+/// ## Arguments
+///
+/// - `lon`: The longitude value as a Float.
+/// - `lat`: The latitude value as a Float.
+/// - `alt`: The altitude value as a Float.
+///
+/// ## Returns
+///
+/// A Position object representing a 3D coordinate.
+///
+/// ## Example
+///
+/// ```gleam
+/// import gleojson
+///
+/// pub fn main() {
+///   let position = gleojson.position_3d(lon: 125.6, lat: 10.1, alt: 100.0)
+///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
+///   let point = gleojson.Point(coordinates: position)
+/// }
+/// ```
+pub fn position_3d(lon lon: Float, lat lat: Float, alt alt: Float) -> Position {
+  Position3D(#(Lon(lon), Lat(lat), Alt(alt)))
+}
+
+fn encode_position(position: Position) -> json.Json {
+  case position {
+    Position2D(#(Lon(lon), Lat(lat))) -> json.array([lon, lat], json.float)
+    Position3D(#(Lon(lon), Lat(lat), Alt(alt))) ->
+      json.array([lon, lat, alt], json.float)
+  }
+}
+
 fn encode_geometry(geometry: Geometry) -> json.Json {
   case geometry {
     Point(coordinates) ->
       json.object([
         #("type", json.string("Point")),
-        #("coordinates", json.array(coordinates, json.float)),
+        #("coordinates", encode_position(coordinates)),
       ])
     MultiPoint(multipoint) ->
       json.object([
         #("type", json.string("MultiPoint")),
-        #("coordinates", json.array(multipoint, json.array(_, json.float))),
+        #("coordinates", json.array(multipoint, encode_position)),
       ])
     LineString(linestring) ->
       json.object([
         #("type", json.string("LineString")),
-        #("coordinates", json.array(linestring, json.array(_, json.float))),
+        #("coordinates", json.array(linestring, encode_position)),
       ])
     MultiLineString(multilinestring) ->
       json.object([
         #("type", json.string("MultiLineString")),
         #(
           "coordinates",
-          json.array(multilinestring, json.array(_, json.array(_, json.float))),
+          json.array(multilinestring, fn(line) {
+            json.array(line, encode_position)
+          }),
         ),
       ])
     Polygon(polygon) ->
@@ -85,7 +152,7 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
         #("type", json.string("Polygon")),
         #(
           "coordinates",
-          json.array(polygon, json.array(_, json.array(_, json.float))),
+          json.array(polygon, fn(ring) { json.array(ring, encode_position) }),
         ),
       ])
     MultiPolygon(multipolygon) ->
@@ -93,10 +160,9 @@ fn encode_geometry(geometry: Geometry) -> json.Json {
         #("type", json.string("MultiPolygon")),
         #(
           "coordinates",
-          json.array(multipolygon, json.array(_, json.array(_, json.array(
-            _,
-            json.float,
-          )))),
+          json.array(multipolygon, fn(polygon) {
+            json.array(polygon, fn(ring) { json.array(ring, encode_position) })
+          }),
         ),
       ])
     GeometryCollection(collection) ->
@@ -184,7 +250,7 @@ fn encode_featurecollection(
 /// }
 ///
 /// pub fn main() {
-///   let point = gleojson.Point([0.0, 0.0])
+///   let point = gleojson.Point(gleojson.position_2d(lon: 0.0, lat: 0.0))
 ///   let properties = CustomProperties("Example", 42.0)
 ///   let feature = gleojson.Feature(
 ///     geometry: option.Some(point),
@@ -212,7 +278,23 @@ pub fn encode_geojson(
 fn position_decoder(
   dyn_value: dynamic.Dynamic,
 ) -> Result(Position, List(dynamic.DecodeError)) {
-  dynamic.list(dynamic.float)(dyn_value)
+  dynamic.any([
+    dynamic.decode1(
+      Position3D,
+      dynamic.tuple3(
+        dynamic.decode1(Lon, dynamic.float),
+        dynamic.decode1(Lat, dynamic.float),
+        dynamic.decode1(Alt, dynamic.float),
+      ),
+    ),
+    dynamic.decode1(
+      Position2D,
+      dynamic.tuple2(
+        dynamic.decode1(Lon, dynamic.float),
+        dynamic.decode1(Lat, dynamic.float),
+      ),
+    ),
+  ])(dyn_value)
 }
 
 fn positions_decoder(
@@ -268,7 +350,7 @@ fn geometry_decoder(
     _ ->
       Error([
         dynamic.DecodeError(
-          expected: "Known Geometry Type",
+          expected: "one of [Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon, GeometryCollection]",
           found: type_str,
           path: ["type"],
         ),
@@ -279,9 +361,10 @@ fn geometry_decoder(
 fn feature_id_decoder(
   dyn_value: dynamic.Dynamic,
 ) -> Result(FeatureId, List(dynamic.DecodeError)) {
-  dynamic.string(dyn_value)
-  |> result.map(StringId)
-  |> result.lazy_or(fn() { dynamic.float(dyn_value) |> result.map(NumberId) })
+  dynamic.any([
+    dynamic.decode1(StringId, dynamic.string),
+    dynamic.decode1(NumberId, dynamic.float),
+  ])(dyn_value)
 }
 
 fn feature_decoder(properties_decoder: dynamic.Decoder(properties)) {

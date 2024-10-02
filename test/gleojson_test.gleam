@@ -134,7 +134,10 @@ fn assert_encode_decode(
 // Test functions for separate geometries
 
 pub fn point_encode_decode_test() {
-  let geojson = gleojson.GeoJSONGeometry(gleojson.Point([1.0, 2.0]))
+  let geojson =
+    gleojson.GeoJSONGeometry(
+      gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+    )
 
   assert_encode_decode(
     geojson,
@@ -146,7 +149,12 @@ pub fn point_encode_decode_test() {
 
 pub fn multipoint_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(gleojson.MultiPoint([[1.0, 2.0], [3.0, 4.0]]))
+    gleojson.GeoJSONGeometry(
+      gleojson.MultiPoint([
+        gleojson.position_2d(lon: 1.0, lat: 2.0),
+        gleojson.position_2d(lon: 3.0, lat: 4.0),
+      ]),
+    )
 
   assert_encode_decode(
     geojson,
@@ -158,7 +166,12 @@ pub fn multipoint_encode_decode_test() {
 
 pub fn linestring_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(gleojson.LineString([[1.0, 2.0], [3.0, 4.0]]))
+    gleojson.GeoJSONGeometry(
+      gleojson.LineString([
+        gleojson.position_2d(lon: 1.0, lat: 2.0),
+        gleojson.position_2d(lon: 3.0, lat: 4.0),
+      ]),
+    )
 
   assert_encode_decode(
     geojson,
@@ -171,7 +184,14 @@ pub fn linestring_encode_decode_test() {
 pub fn polygon_encode_decode_test() {
   let geojson =
     gleojson.GeoJSONGeometry(
-      gleojson.Polygon([[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]]),
+      gleojson.Polygon([
+        [
+          gleojson.position_2d(lon: 1.0, lat: 2.0),
+          gleojson.position_2d(lon: 3.0, lat: 4.0),
+          gleojson.position_2d(lon: 5.0, lat: 6.0),
+          gleojson.position_2d(lon: 1.0, lat: 2.0),
+        ],
+      ]),
     )
 
   assert_encode_decode(
@@ -186,8 +206,22 @@ pub fn multipolygon_encode_decode_test() {
   let geojson =
     gleojson.GeoJSONGeometry(
       gleojson.MultiPolygon([
-        [[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [1.0, 2.0]]],
-        [[[7.0, 8.0], [9.0, 10.0], [11.0, 12.0], [7.0, 8.0]]],
+        [
+          [
+            gleojson.position_2d(lon: 1.0, lat: 2.0),
+            gleojson.position_2d(lon: 3.0, lat: 4.0),
+            gleojson.position_2d(lon: 5.0, lat: 6.0),
+            gleojson.position_2d(lon: 1.0, lat: 2.0),
+          ],
+        ],
+        [
+          [
+            gleojson.position_2d(lon: 7.0, lat: 8.0),
+            gleojson.position_2d(lon: 9.0, lat: 10.0),
+            gleojson.position_2d(lon: 11.0, lat: 12.0),
+            gleojson.position_2d(lon: 7.0, lat: 8.0),
+          ],
+        ],
       ]),
     )
 
@@ -203,8 +237,11 @@ pub fn geometrycollection_encode_decode_test() {
   let geojson =
     gleojson.GeoJSONGeometry(
       gleojson.GeometryCollection([
-        gleojson.Point([1.0, 2.0]),
-        gleojson.LineString([[3.0, 4.0], [5.0, 6.0]]),
+        gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+        gleojson.LineString([
+          gleojson.position_2d(lon: 3.0, lat: 4.0),
+          gleojson.position_2d(lon: 5.0, lat: 6.0),
+        ]),
       ]),
     )
 
@@ -221,7 +258,9 @@ pub fn feature_encode_decode_test() {
 
   let feature =
     gleojson.Feature(
-      geometry: option.Some(gleojson.Point([1.0, 2.0])),
+      geometry: option.Some(
+        gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+      ),
       properties: option.Some(properties),
       id: option.Some(gleojson.StringId("feature-id")),
     )
@@ -244,10 +283,10 @@ pub fn real_life_feature_test() {
       geometry: option.Some(
         gleojson.Polygon([
           [
-            [-119.5383, 37.8651],
-            [-119.5127, 37.8777],
-            [-119.4939, 37.8685],
-            [-119.5383, 37.8651],
+            gleojson.position_2d(lon: -119.5383, lat: 37.8651),
+            gleojson.position_2d(lon: -119.5127, lat: 37.8777),
+            gleojson.position_2d(lon: -119.4939, lat: 37.8685),
+            gleojson.position_2d(lon: -119.5383, lat: 37.8651),
           ],
         ]),
       ),
@@ -270,7 +309,9 @@ pub fn real_life_featurecollection_test() {
 
   let city_feature =
     gleojson.Feature(
-      geometry: option.Some(gleojson.Point([139.6917, 35.6895])),
+      geometry: option.Some(
+        gleojson.Point(gleojson.position_2d(lon: 139.6917, lat: 35.6895)),
+      ),
       properties: option.Some(city_properties),
       id: option.Some(gleojson.StringId("tokyo")),
     )
@@ -282,9 +323,9 @@ pub fn real_life_featurecollection_test() {
     gleojson.Feature(
       geometry: option.Some(
         gleojson.LineString([
-          [-115.1728, 36.1147],
-          [-116.2139, 36.5674],
-          [-117.1522, 36.6567],
+          gleojson.position_2d(lon: -115.1728, lat: 36.1147),
+          gleojson.position_2d(lon: -116.2139, lat: 36.5674),
+          gleojson.position_2d(lon: -117.1522, lat: 36.6567),
         ]),
       ),
       properties: option.Some(river_properties),
