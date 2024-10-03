@@ -112,7 +112,7 @@ fn mixed_features_properties_decoder(
 }
 
 fn assert_encode_decode(
-  geojson: gleojson.GeoJSON(properties),
+  geojson: gleojson.GeoJSON(kind, properties),
   properties_encoder: fn(properties) -> json.Json,
   properties_decoder: dynamic.Decoder(properties),
   name: String,
@@ -131,16 +131,9 @@ fn assert_encode_decode(
   |> should.equal(geojson)
 }
 
-// Test functions for separate geometries
-
 pub fn point_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0))
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "point_encode_decode",
@@ -148,16 +141,11 @@ pub fn point_encode_decode_test() {
 }
 
 pub fn multipoint_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.MultiPoint([
-        gleojson.position_2d(lon: 1.0, lat: 2.0),
-        gleojson.position_2d(lon: 3.0, lat: 4.0),
-      ]),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.MultiPoint([
+    gleojson.position_2d(lon: 1.0, lat: 2.0),
+    gleojson.position_2d(lon: 3.0, lat: 4.0),
+  ])
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "multipoint_encode_decode",
@@ -165,16 +153,11 @@ pub fn multipoint_encode_decode_test() {
 }
 
 pub fn linestring_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.LineString([
-        gleojson.position_2d(lon: 1.0, lat: 2.0),
-        gleojson.position_2d(lon: 3.0, lat: 4.0),
-      ]),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.LineString([
+    gleojson.position_2d(lon: 1.0, lat: 2.0),
+    gleojson.position_2d(lon: 3.0, lat: 4.0),
+  ])
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "linestring_encode_decode",
@@ -182,20 +165,15 @@ pub fn linestring_encode_decode_test() {
 }
 
 pub fn polygon_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.Polygon([
-        [
-          gleojson.position_2d(lon: 1.0, lat: 2.0),
-          gleojson.position_2d(lon: 3.0, lat: 4.0),
-          gleojson.position_2d(lon: 5.0, lat: 6.0),
-          gleojson.position_2d(lon: 1.0, lat: 2.0),
-        ],
-      ]),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.Polygon([
+    [
+      gleojson.position_2d(lon: 1.0, lat: 2.0),
+      gleojson.position_2d(lon: 3.0, lat: 4.0),
+      gleojson.position_2d(lon: 5.0, lat: 6.0),
+      gleojson.position_2d(lon: 1.0, lat: 2.0),
+    ],
+  ])
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "polygon_encode_decode",
@@ -203,30 +181,25 @@ pub fn polygon_encode_decode_test() {
 }
 
 pub fn multipolygon_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.MultiPolygon([
-        [
-          [
-            gleojson.position_2d(lon: 1.0, lat: 2.0),
-            gleojson.position_2d(lon: 3.0, lat: 4.0),
-            gleojson.position_2d(lon: 5.0, lat: 6.0),
-            gleojson.position_2d(lon: 1.0, lat: 2.0),
-          ],
-        ],
-        [
-          [
-            gleojson.position_2d(lon: 7.0, lat: 8.0),
-            gleojson.position_2d(lon: 9.0, lat: 10.0),
-            gleojson.position_2d(lon: 11.0, lat: 12.0),
-            gleojson.position_2d(lon: 7.0, lat: 8.0),
-          ],
-        ],
-      ]),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.MultiPolygon([
+    [
+      [
+        gleojson.position_2d(lon: 1.0, lat: 2.0),
+        gleojson.position_2d(lon: 3.0, lat: 4.0),
+        gleojson.position_2d(lon: 5.0, lat: 6.0),
+        gleojson.position_2d(lon: 1.0, lat: 2.0),
+      ],
+    ],
+    [
+      [
+        gleojson.position_2d(lon: 7.0, lat: 8.0),
+        gleojson.position_2d(lon: 9.0, lat: 10.0),
+        gleojson.position_2d(lon: 11.0, lat: 12.0),
+        gleojson.position_2d(lon: 7.0, lat: 8.0),
+      ],
+    ],
+  ])
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "multipolygon_encode_decode",
@@ -234,19 +207,14 @@ pub fn multipolygon_encode_decode_test() {
 }
 
 pub fn geometrycollection_encode_decode_test() {
-  let geojson =
-    gleojson.GeoJSONGeometry(
-      gleojson.GeometryCollection([
-        gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
-        gleojson.LineString([
-          gleojson.position_2d(lon: 3.0, lat: 4.0),
-          gleojson.position_2d(lon: 5.0, lat: 6.0),
-        ]),
-      ]),
-    )
-
-  assert_encode_decode(
-    geojson,
+  gleojson.GeometryCollection([
+    gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+    gleojson.LineString([
+      gleojson.position_2d(lon: 3.0, lat: 4.0),
+      gleojson.position_2d(lon: 5.0, lat: 6.0),
+    ]),
+  ])
+  |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
     "geometrycollection_encode_decode",
@@ -254,21 +222,14 @@ pub fn geometrycollection_encode_decode_test() {
 }
 
 pub fn feature_encode_decode_test() {
-  let properties = TestProperties("Test Point", 42.0)
-
-  let feature =
-    gleojson.Feature(
-      geometry: option.Some(
-        gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
-      ),
-      properties: option.Some(properties),
-      id: option.Some(gleojson.StringId("feature-id")),
-    )
-
-  let geojson = gleojson.GeoJSONFeature(feature)
-
-  assert_encode_decode(
-    geojson,
+  gleojson.Feature(
+    geometry: option.Some(
+      gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+    ),
+    properties: option.Some(TestProperties("Test Point", 42.0)),
+    id: option.Some(gleojson.StringId("feature-id")),
+  )
+  |> assert_encode_decode(
     test_properties_encoder,
     test_properties_decoder,
     "feature_encode_decode",
@@ -276,28 +237,23 @@ pub fn feature_encode_decode_test() {
 }
 
 pub fn real_life_feature_test() {
-  let properties = ParkProperties("Yosemite National Park", 3029.87, 1890, True)
-
-  let feature =
-    gleojson.Feature(
-      geometry: option.Some(
-        gleojson.Polygon([
-          [
-            gleojson.position_2d(lon: -119.5383, lat: 37.8651),
-            gleojson.position_2d(lon: -119.5127, lat: 37.8777),
-            gleojson.position_2d(lon: -119.4939, lat: 37.8685),
-            gleojson.position_2d(lon: -119.5383, lat: 37.8651),
-          ],
-        ]),
-      ),
-      properties: option.Some(properties),
-      id: option.Some(gleojson.StringId("yosemite")),
-    )
-
-  let geojson = gleojson.GeoJSONFeature(feature)
-
-  assert_encode_decode(
-    geojson,
+  let park_properties =
+    ParkProperties("Yosemite National Park", 3029.87, 1890, True)
+  gleojson.Feature(
+    geometry: option.Some(
+      gleojson.Polygon([
+        [
+          gleojson.position_2d(lon: -119.5383, lat: 37.8651),
+          gleojson.position_2d(lon: -119.5127, lat: 37.8777),
+          gleojson.position_2d(lon: -119.4939, lat: 37.8685),
+          gleojson.position_2d(lon: -119.5383, lat: 37.8651),
+        ],
+      ]),
+    ),
+    properties: option.Some(park_properties),
+    id: option.Some(gleojson.StringId("yosemite")),
+  )
+  |> assert_encode_decode(
     park_properties_encoder,
     park_properties_decoder,
     "real_life_feature",
@@ -332,13 +288,8 @@ pub fn real_life_featurecollection_test() {
       id: option.Some(gleojson.StringId("colorado-river")),
     )
 
-  let feature_collection =
-    gleojson.FeatureCollection([city_feature, river_feature])
-
-  let geojson = gleojson.GeoJSONFeatureCollection(feature_collection)
-
-  assert_encode_decode(
-    geojson,
+  gleojson.FeatureCollection([city_feature, river_feature])
+  |> assert_encode_decode(
     mixed_features_properties_encoder,
     mixed_features_properties_decoder,
     "real_life_featurecollection",
