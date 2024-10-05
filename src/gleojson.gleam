@@ -1,3 +1,9 @@
+//// Functions for working with GeoJSON data.
+//// This module provides types and functions for encoding and decoding GeoJSON data.
+//// It supports all GeoJSON object types including Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon, GeometryCollection, Feature, and FeatureCollection.
+////
+//// Note: This module uses [phantom types](https://blog.hayleigh.dev/phantom-types-in-gleam) to distinguish between different GeoJSON object types.
+
 import gleam/dynamic
 import gleam/json
 import gleam/option
@@ -23,6 +29,7 @@ pub type Lat {
 ///
 /// Altitude can be positive (above sea level) or negative (below sea level).
 pub type Alt {
+  /// Altitude value.
   Alt(Float)
 }
 
@@ -30,7 +37,9 @@ pub type Alt {
 ///
 /// This type is used to define coordinates in GeoJSON objects.
 pub type Position {
+  /// A 2D position with longitude and latitude.
   Position2D(#(Lon, Lat))
+  /// A 3D position with longitude, latitude, and altitude.
   Position3D(#(Lon, Lat, Alt))
 }
 
@@ -39,6 +48,9 @@ pub type Geometry
 
 /// Feature kind denominator for GeoJSON objects.
 pub type Feature
+
+/// FeatureCollection kind denominator for GeoJSON objects.
+pub type FeatureCollection
 
 /// Represents the ID of a Feature in GeoJSON.
 ///
@@ -50,9 +62,12 @@ pub type FeatureId {
 
 /// Represents all possible GeoJSON objects as defined in the GeoJSON specification.
 ///
-/// This type uses phantom types `kind` and `properties` to distinguish between
-/// different GeoJSON object types and to allow for custom property types.
-pub type GeoJSON(kind, properties) {
+/// This type uses phantom type `kind` to distinguish between different GeoJSON object types.
+/// Generic value `properties` allows custom property types.
+///
+/// This type is opaque to prevent direct construction of GeoJSON objects with wrong types.
+/// Use the provided functions to create GeoJSON objects.
+pub opaque type GeoJSON(kind, properties) {
   Point(coordinates: Position)
   MultiPoint(coordinates: List(Position))
   LineString(coordinates: List(Position))
@@ -68,65 +83,6 @@ pub type GeoJSON(kind, properties) {
   FeatureCollection(features: List(GeoJSON(Feature, properties)))
 }
 
-/// Creates a 2D Position object from longitude and latitude values.
-///
-/// This function is a convenience helper for creating a Position object
-/// with two dimensions (longitude and latitude).
-///
-/// ## Arguments
-///
-/// - `lon`: The longitude value as a Float.
-/// - `lat`: The latitude value as a Float.
-///
-/// ## Returns
-///
-/// A Position object representing a 2D coordinate.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-///
-/// pub fn main() {
-///   let position = gleojson.position_2d(lon: 125.6, lat: 10.1)
-///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
-///   let point = gleojson.Point(coordinates: position)
-/// }
-/// ```
-pub fn position_2d(lon lon: Float, lat lat: Float) -> Position {
-  Position2D(#(Lon(lon), Lat(lat)))
-}
-
-/// Creates a 3D Position object from longitude, latitude, and altitude values.
-///
-/// This function is a convenience helper for creating a Position object
-/// with three dimensions (longitude, latitude, and altitude).
-///
-/// ## Arguments
-///
-/// - `lon`: The longitude value as a Float.
-/// - `lat`: The latitude value as a Float.
-/// - `alt`: The altitude value as a Float.
-///
-/// ## Returns
-///
-/// A Position object representing a 3D coordinate.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-///
-/// pub fn main() {
-///   let position = gleojson.position_3d(lon: 125.6, lat: 10.1, alt: 100.0)
-///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
-///   let point = gleojson.Point(coordinates: position)
-/// }
-/// ```
-pub fn position_3d(lon lon: Float, lat lat: Float, alt alt: Float) -> Position {
-  Position3D(#(Lon(lon), Lat(lat), Alt(alt)))
-}
-
 fn encode_position(position: Position) -> json.Json {
   case position {
     Position2D(#(Lon(lon), Lat(lat))) -> json.array([lon, lat], json.float)
@@ -135,10 +91,7 @@ fn encode_position(position: Position) -> json.Json {
   }
 }
 
-/// Encodes a GeoJSON geometry object into a JSON value.
-///
-/// This function is a convenience wrapper around `encode_geojson` for geometry objects.
-pub fn encode_geometry(geometry: GeoJSON(Geometry, properties)) {
+fn encode_geometry(geometry: GeoJSON(Geometry, properties)) {
   encode_geojson(geometry, properties_null_encoder)
 }
 
@@ -150,18 +103,6 @@ fn encode_feature(
 }
 
 /// Encodes a GeoJSON object into a JSON value.
-///
-/// This function takes a GeoJSON object and a properties encoder function,
-/// and returns a JSON representation of the GeoJSON object.
-///
-/// ## Arguments
-///
-/// - `geojson`: The GeoJSON object to encode.
-/// - `properties_encoder`: A function that encodes the properties of Features and FeatureCollections.
-///
-/// ## Returns
-///
-/// A JSON representation of the GeoJSON object.
 ///
 /// ## Example
 ///
@@ -176,21 +117,19 @@ fn encode_feature(
 /// }
 ///
 /// pub fn custom_properties_encoder(props: CustomProperties) -> json.Json {
-///   json.object([
-///     #("name", json.string(props.name)),
-///     #("value", json.float(props.value)),
-///   ])
+///   let CustomProperties(name, value) = props
+///   json.object([#("name", json.string(name)), #("value", json.float(value))])
 /// }
 ///
 /// pub fn main() {
-///   let point = gleojson.Point(gleojson.position_2d(lon: 0.0, lat: 0.0))
+///   let point = gleojson.new_point(gleojson.new_position_2d(lon: 0.0, lat: 0.0))
 ///   let properties = CustomProperties("Example", 42.0)
-///   let feature = gleojson.Feature(
+///   let feature = gleojson.new_feature(
 ///     geometry: option.Some(point),
 ///     properties: option.Some(properties),
 ///     id: option.Some(gleojson.StringId("example-point"))
 ///   )
-///   
+///
 ///   let encoded = gleojson.encode_geojson(feature, custom_properties_encoder)
 ///   io.println(json.to_string(encoded))
 /// }
@@ -324,10 +263,7 @@ fn feature_id_decoder() {
   ])
 }
 
-/// Creates a decoder for GeoJSON geometry objects.
-///
-/// This function is a convenience wrapper around `geojson_decoder` for geometry objects.
-pub fn geometry_decoder() -> dynamic.Decoder(GeoJSON(Geometry, Nil)) {
+fn geometry_decoder() -> dynamic.Decoder(GeoJSON(Geometry, Nil)) {
   geojson_decoder(properties_null_decoder)
 }
 
@@ -339,17 +275,8 @@ fn feature_decoder(
 
 /// Decodes a GeoJSON object from a dynamic value.
 ///
-/// This function takes a dynamic value (typically parsed from JSON) and a properties decoder,
-/// and attempts to decode it into a GeoJSON object.
-///
-/// ## Arguments
-///
-/// - `properties_decoder`: A function that decodes the properties of Features and FeatureCollections.
-///
-/// ## Returns
-///
-/// A function that takes a dynamic value and returns a Result containing either
-/// the decoded GeoJSON object or a list of decode errors.
+/// The `properties_decoder` argument is a function that decodes the properties
+/// of Feature objects. This allows for custom property types in your GeoJSON data.
 ///
 /// ## Example
 ///
@@ -377,13 +304,13 @@ fn feature_decoder(
 ///
 /// pub fn main() {
 ///   let json_string = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[0.0,0.0]},\"properties\":{\"name\":\"Example\",\"value\":42.0}}"
-///   
-///   let decoded = 
+///
+///   let decoded =
 ///     json.decode(
 ///       from: json_string,
 ///       using: gleojson.geojson_decoder(custom_properties_decoder)
 ///     )
-///   
+///
 ///   case decoded {
 ///     Ok(geojson) -> {
 ///       // Work with the decoded GeoJSON object
@@ -473,4 +400,117 @@ pub fn properties_null_encoder(_props) {
 /// argument for `geojson_decoder` when you don't need to decode any properties.
 pub fn properties_null_decoder(_dyn) -> Result(Nil, List(dynamic.DecodeError)) {
   Ok(Nil)
+}
+
+/// Creates a 2D Position object from longitude and latitude values.
+///
+/// ## Example
+///
+/// ```gleam
+/// import gleojson
+///
+/// pub fn main() {
+///   let position = gleojson.new_position_2d(lon: 125.6, lat: 10.1)
+///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
+///   let point = gleojson.new_point(position)
+/// }
+/// ```
+pub fn new_position_2d(lon lon: Float, lat lat: Float) -> Position {
+  Position2D(#(Lon(lon), Lat(lat)))
+}
+
+/// Creates a 3D Position object from longitude, latitude, and altitude values.
+///
+/// ## Example
+///
+/// ```gleam
+/// import gleojson
+///
+/// pub fn main() {
+///   let position = gleojson.new_position_3d(lon: 125.6, lat: 10.1, alt: 100.0)
+///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
+///   let point = gleojson.new_point(position)
+/// }
+/// ```
+pub fn new_position_3d(
+  lon lon: Float,
+  lat lat: Float,
+  alt alt: Float,
+) -> Position {
+  Position3D(#(Lon(lon), Lat(lat), Alt(alt)))
+}
+
+/// Creates a Point GeoJSON object.
+///
+/// A Point represents a single location on Earth, defined by its coordinates.
+pub fn new_point(position: Position) -> GeoJSON(Geometry, Nil) {
+  Point(position)
+}
+
+/// Creates a MultiPoint GeoJSON object.
+///
+/// A MultiPoint represents multiple locations on Earth, each defined by its coordinates.
+pub fn new_multi_point(points: List(Position)) -> GeoJSON(Geometry, Nil) {
+  MultiPoint(points)
+}
+
+/// Creates a LineString GeoJSON object.
+///
+/// A LineString represents a series of connected locations on Earth, forming a line.
+pub fn new_line_string(points: List(Position)) -> GeoJSON(Geometry, Nil) {
+  LineString(points)
+}
+
+/// Creates a MultiLineString GeoJSON object.
+///
+/// A MultiLineString represents multiple series of connected locations on Earth, forming multiple lines.
+pub fn new_multiline_string(
+  lines: List(List(Position)),
+) -> GeoJSON(Geometry, Nil) {
+  MultiLineString(lines)
+}
+
+/// Creates a Polygon GeoJSON object.
+///
+/// A Polygon represents a closed area on Earth, defined by a series of coordinates forming a ring.
+pub fn new_polygon(rings: List(List(Position))) -> GeoJSON(Geometry, Nil) {
+  Polygon(rings)
+}
+
+/// Creates a MultiPolygon GeoJSON object.
+///
+/// A MultiPolygon represents multiple closed areas on Earth, each defined by a series of coordinates forming rings.
+pub fn new_multi_polygon(
+  polygons: List(List(List(Position))),
+) -> GeoJSON(Geometry, Nil) {
+  MultiPolygon(polygons)
+}
+
+/// Creates a GeometryCollection GeoJSON object.
+///
+/// A GeometryCollection represents a collection of different geometry types (Point, LineString, Polygon, etc.).
+pub fn new_geometry_collection(
+  geometries: List(GeoJSON(Geometry, Nil)),
+) -> GeoJSON(Geometry, Nil) {
+  GeometryCollection(geometries)
+}
+
+/// Creates a Feature GeoJSON object.
+///
+/// A Feature represents a spatially bounded thing, combining a geometry with additional properties.
+pub fn new_feature(
+  geometry geometry: option.Option(GeoJSON(Geometry, Nil)),
+  properties properties: option.Option(p),
+  id id: option.Option(FeatureId),
+) -> GeoJSON(Feature, p) {
+  Feature(geometry: geometry, properties: properties, id: id)
+}
+
+/// Creates a FeatureCollection GeoJSON object.
+///
+/// A FeatureCollection represents a collection of Features.
+pub fn new_feature_collection(
+  features: List(GeoJSON(Feature, p)),
+) -> GeoJSON(FeatureCollection, p) {
+  FeatureCollection(features)
 }

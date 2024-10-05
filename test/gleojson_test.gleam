@@ -132,7 +132,7 @@ fn assert_encode_decode(
 }
 
 pub fn point_encode_decode_test() {
-  gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0))
+  gleojson.new_point(gleojson.new_position_2d(lon: 1.0, lat: 2.0))
   |> assert_encode_decode(
     gleojson.properties_null_encoder,
     gleojson.properties_null_decoder,
@@ -141,9 +141,9 @@ pub fn point_encode_decode_test() {
 }
 
 pub fn multipoint_encode_decode_test() {
-  gleojson.MultiPoint([
-    gleojson.position_2d(lon: 1.0, lat: 2.0),
-    gleojson.position_2d(lon: 3.0, lat: 4.0),
+  gleojson.new_multi_point([
+    gleojson.new_position_2d(lon: 1.0, lat: 2.0),
+    gleojson.new_position_2d(lon: 3.0, lat: 4.0),
   ])
   |> assert_encode_decode(
     gleojson.properties_null_encoder,
@@ -153,9 +153,9 @@ pub fn multipoint_encode_decode_test() {
 }
 
 pub fn linestring_encode_decode_test() {
-  gleojson.LineString([
-    gleojson.position_2d(lon: 1.0, lat: 2.0),
-    gleojson.position_2d(lon: 3.0, lat: 4.0),
+  gleojson.new_line_string([
+    gleojson.new_position_2d(lon: 1.0, lat: 2.0),
+    gleojson.new_position_2d(lon: 3.0, lat: 4.0),
   ])
   |> assert_encode_decode(
     gleojson.properties_null_encoder,
@@ -165,12 +165,12 @@ pub fn linestring_encode_decode_test() {
 }
 
 pub fn polygon_encode_decode_test() {
-  gleojson.Polygon([
+  gleojson.new_polygon([
     [
-      gleojson.position_2d(lon: 1.0, lat: 2.0),
-      gleojson.position_2d(lon: 3.0, lat: 4.0),
-      gleojson.position_2d(lon: 5.0, lat: 6.0),
-      gleojson.position_2d(lon: 1.0, lat: 2.0),
+      gleojson.new_position_2d(lon: 1.0, lat: 2.0),
+      gleojson.new_position_2d(lon: 3.0, lat: 4.0),
+      gleojson.new_position_2d(lon: 5.0, lat: 6.0),
+      gleojson.new_position_2d(lon: 1.0, lat: 2.0),
     ],
   ])
   |> assert_encode_decode(
@@ -181,21 +181,21 @@ pub fn polygon_encode_decode_test() {
 }
 
 pub fn multipolygon_encode_decode_test() {
-  gleojson.MultiPolygon([
+  gleojson.new_multi_polygon([
     [
       [
-        gleojson.position_2d(lon: 1.0, lat: 2.0),
-        gleojson.position_2d(lon: 3.0, lat: 4.0),
-        gleojson.position_2d(lon: 5.0, lat: 6.0),
-        gleojson.position_2d(lon: 1.0, lat: 2.0),
+        gleojson.new_position_2d(lon: 1.0, lat: 2.0),
+        gleojson.new_position_2d(lon: 3.0, lat: 4.0),
+        gleojson.new_position_2d(lon: 5.0, lat: 6.0),
+        gleojson.new_position_2d(lon: 1.0, lat: 2.0),
       ],
     ],
     [
       [
-        gleojson.position_2d(lon: 7.0, lat: 8.0),
-        gleojson.position_2d(lon: 9.0, lat: 10.0),
-        gleojson.position_2d(lon: 11.0, lat: 12.0),
-        gleojson.position_2d(lon: 7.0, lat: 8.0),
+        gleojson.new_position_2d(lon: 7.0, lat: 8.0),
+        gleojson.new_position_2d(lon: 9.0, lat: 10.0),
+        gleojson.new_position_2d(lon: 11.0, lat: 12.0),
+        gleojson.new_position_2d(lon: 7.0, lat: 8.0),
       ],
     ],
   ])
@@ -207,11 +207,11 @@ pub fn multipolygon_encode_decode_test() {
 }
 
 pub fn geometrycollection_encode_decode_test() {
-  gleojson.GeometryCollection([
-    gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
-    gleojson.LineString([
-      gleojson.position_2d(lon: 3.0, lat: 4.0),
-      gleojson.position_2d(lon: 5.0, lat: 6.0),
+  gleojson.new_geometry_collection([
+    gleojson.new_point(gleojson.new_position_2d(lon: 1.0, lat: 2.0)),
+    gleojson.new_line_string([
+      gleojson.new_position_2d(lon: 3.0, lat: 4.0),
+      gleojson.new_position_2d(lon: 5.0, lat: 6.0),
     ]),
   ])
   |> assert_encode_decode(
@@ -222,9 +222,9 @@ pub fn geometrycollection_encode_decode_test() {
 }
 
 pub fn feature_encode_decode_test() {
-  gleojson.Feature(
+  gleojson.new_feature(
     geometry: option.Some(
-      gleojson.Point(gleojson.position_2d(lon: 1.0, lat: 2.0)),
+      gleojson.new_point(gleojson.new_position_2d(lon: 1.0, lat: 2.0)),
     ),
     properties: option.Some(TestProperties("Test Point", 42.0)),
     id: option.Some(gleojson.StringId("feature-id")),
@@ -239,14 +239,14 @@ pub fn feature_encode_decode_test() {
 pub fn real_life_feature_test() {
   let park_properties =
     ParkProperties("Yosemite National Park", 3029.87, 1890, True)
-  gleojson.Feature(
+  gleojson.new_feature(
     geometry: option.Some(
-      gleojson.Polygon([
+      gleojson.new_polygon([
         [
-          gleojson.position_2d(lon: -119.5383, lat: 37.8651),
-          gleojson.position_2d(lon: -119.5127, lat: 37.8777),
-          gleojson.position_2d(lon: -119.4939, lat: 37.8685),
-          gleojson.position_2d(lon: -119.5383, lat: 37.8651),
+          gleojson.new_position_2d(lon: -119.5383, lat: 37.8651),
+          gleojson.new_position_2d(lon: -119.5127, lat: 37.8777),
+          gleojson.new_position_2d(lon: -119.4939, lat: 37.8685),
+          gleojson.new_position_2d(lon: -119.5383, lat: 37.8651),
         ],
       ]),
     ),
@@ -264,9 +264,9 @@ pub fn real_life_featurecollection_test() {
   let city_properties = CityProperties("Tokyo", 37_435_191, "Asia/Tokyo", 40.0)
 
   let city_feature =
-    gleojson.Feature(
+    gleojson.new_feature(
       geometry: option.Some(
-        gleojson.Point(gleojson.position_2d(lon: 139.6917, lat: 35.6895)),
+        gleojson.new_point(gleojson.new_position_2d(lon: 139.6917, lat: 35.6895)),
       ),
       properties: option.Some(city_properties),
       id: option.Some(gleojson.StringId("tokyo")),
@@ -276,19 +276,19 @@ pub fn real_life_featurecollection_test() {
     RiverProperties("Colorado River", 2330.0, ["USA", "Mexico"])
 
   let river_feature =
-    gleojson.Feature(
+    gleojson.new_feature(
       geometry: option.Some(
-        gleojson.LineString([
-          gleojson.position_2d(lon: -115.1728, lat: 36.1147),
-          gleojson.position_2d(lon: -116.2139, lat: 36.5674),
-          gleojson.position_2d(lon: -117.1522, lat: 36.6567),
+        gleojson.new_line_string([
+          gleojson.new_position_2d(lon: -115.1728, lat: 36.1147),
+          gleojson.new_position_2d(lon: -116.2139, lat: 36.5674),
+          gleojson.new_position_2d(lon: -117.1522, lat: 36.6567),
         ]),
       ),
       properties: option.Some(river_properties),
       id: option.Some(gleojson.StringId("colorado-river")),
     )
 
-  gleojson.FeatureCollection([city_feature, river_feature])
+  gleojson.new_feature_collection([city_feature, river_feature])
   |> assert_encode_decode(
     mixed_features_properties_encoder,
     mixed_features_properties_decoder,
