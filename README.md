@@ -3,9 +3,15 @@
 [![Package Version](https://img.shields.io/hexpm/v/gleojson)](https://hex.pm/packages/gleojson)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/gleojson/)
 
-**gleojson** is a comprehensive GeoJSON parsing and encoding library for Gleam, following the [RFC 7946](https://tools.ietf.org/html/rfc7946) specification. It provides robust types and utility functions to seamlessly encode and decode GeoJSON objects such as Points, LineStrings, Polygons, and more.
+**gleojson** is a comprehensive GeoJSON parsing and encoding library for Gleam, following the [RFC 7946](https://tools.ietf.org/html/rfc7946) specification.
 
-**Note:** This package is currently in development and has not reached version 1.0.0 yet. The API is considered unstable and may undergo breaking changes in future releases. Please use with caution in production environments and expect potential updates that might require code changes.
+GeoJSON is a format for encoding a variety of geographic data structures.
+It supports geometry types such as Point, LineString, Polygon, and others, as well as more complex types like Feature and FeatureCollection.
+GeoJSON is widely used in mapping applications and geographic information systems (GIS).
+
+**Note:** This package is currently in development and has not reached version 1.0.0 yet.
+The API is considered unstable and may undergo breaking changes in future releases.
+Please use with caution in production environments and expect potential updates that might require code changes.
 
 ## Features
 
@@ -46,10 +52,10 @@ import gleam/io
 
 pub fn main() {
   // Create a Point geometry
-  let point = gleojson.Point(gleojson.position_2d(lon: 125.6, lat: 10.1))
+  let point = gleojson.new_point(gleojson.new_position_2d(lon: 125.6, lat: 10.1))
 
   // Create a Feature with the Point geometry
-  let feature = gleojson.Feature(
+  let feature = gleojson.new_feature(
     geometry: option.Some(point),
     properties: option.None,
     id: option.Some(gleojson.StringId("example-point"))
