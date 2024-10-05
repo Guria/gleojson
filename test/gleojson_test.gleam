@@ -20,14 +20,12 @@ fn test_properties_encoder(props: TestProperties) -> json.Json {
   json.object([#("name", json.string(name)), #("value", json.float(value))])
 }
 
-fn test_properties_decoder(
-  dyn_value: dynamic.Dynamic,
-) -> Result(TestProperties, List(dynamic.DecodeError)) {
+fn test_properties_decoder() {
   dynamic.decode2(
     TestProperties,
     dynamic.field("name", dynamic.string),
     dynamic.field("value", dynamic.float),
-  )(dyn_value)
+  )
 }
 
 pub type ParkProperties {
@@ -49,16 +47,14 @@ fn park_properties_encoder(props: ParkProperties) -> json.Json {
   ])
 }
 
-fn park_properties_decoder(
-  dyn_value: dynamic.Dynamic,
-) -> Result(ParkProperties, List(dynamic.DecodeError)) {
+fn park_properties_decoder() {
   dynamic.decode4(
     ParkProperties,
     dynamic.field("name", dynamic.string),
     dynamic.field("area_sq_km", dynamic.float),
     dynamic.field("year_established", dynamic.int),
     dynamic.field("is_protected", dynamic.bool),
-  )(dyn_value)
+  )
 }
 
 pub type MixedFeaturesProperties {
@@ -91,9 +87,7 @@ fn mixed_features_properties_encoder(
   }
 }
 
-fn mixed_features_properties_decoder(
-  dyn_value: dynamic.Dynamic,
-) -> Result(MixedFeaturesProperties, List(dynamic.DecodeError)) {
+fn mixed_features_properties_decoder() {
   dynamic.any([
     dynamic.decode4(
       CityProperties,
@@ -108,7 +102,7 @@ fn mixed_features_properties_decoder(
       dynamic.field("length_km", dynamic.float),
       dynamic.field("countries", dynamic.list(dynamic.string)),
     ),
-  ])(dyn_value)
+  ])
 }
 
 fn assert_encode_decode(
@@ -270,7 +264,7 @@ pub fn feature_encode_decode_test() {
   assert_encode_decode(
     geojson,
     test_properties_encoder,
-    test_properties_decoder,
+    test_properties_decoder(),
     "feature_encode_decode",
   )
 }
@@ -299,7 +293,7 @@ pub fn real_life_feature_test() {
   assert_encode_decode(
     geojson,
     park_properties_encoder,
-    park_properties_decoder,
+    park_properties_decoder(),
     "real_life_feature",
   )
 }
@@ -340,7 +334,7 @@ pub fn real_life_featurecollection_test() {
   assert_encode_decode(
     geojson,
     mixed_features_properties_encoder,
-    mixed_features_properties_decoder,
+    mixed_features_properties_decoder(),
     "real_life_featurecollection",
   )
 }
