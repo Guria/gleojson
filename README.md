@@ -56,7 +56,7 @@ pub fn main() {
   )
 
   // Encode the Feature to GeoJSON
-  let geojson = gleojson.GeoJSONFeature(feature)
+  let geojson = gleojson.GeoFeature(feature)
   let encoded = gleojson.encode_geojson(geojson, gleojson.properties_null_encoder)
 
   // Print the encoded GeoJSON

@@ -1,12 +1,9 @@
 import birdie
 import gleam/dynamic
-
 import gleam/json
-
 import gleam/option
 import gleeunit
 import gleeunit/should
-
 import gleojson
 
 pub fn main() {
@@ -129,7 +126,7 @@ fn assert_encode_decode(
 
 pub fn point_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.Point(gleojson.new_position_2d(lon: 1.0, lat: 2.0)),
     )
 
@@ -143,7 +140,7 @@ pub fn point_encode_decode_test() {
 
 pub fn multipoint_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.MultiPoint([
         gleojson.new_position_2d(lon: 1.0, lat: 2.0),
         gleojson.new_position_2d(lon: 3.0, lat: 4.0),
@@ -160,7 +157,7 @@ pub fn multipoint_encode_decode_test() {
 
 pub fn linestring_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.LineString([
         gleojson.new_position_2d(lon: 1.0, lat: 2.0),
         gleojson.new_position_2d(lon: 3.0, lat: 4.0),
@@ -177,7 +174,7 @@ pub fn linestring_encode_decode_test() {
 
 pub fn polygon_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.Polygon([
         [
           gleojson.new_position_2d(lon: 1.0, lat: 2.0),
@@ -198,7 +195,7 @@ pub fn polygon_encode_decode_test() {
 
 pub fn multipolygon_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.MultiPolygon([
         [
           [
@@ -229,7 +226,7 @@ pub fn multipolygon_encode_decode_test() {
 
 pub fn geometrycollection_encode_decode_test() {
   let geojson =
-    gleojson.GeoJSONGeometry(
+    gleojson.GeoGeometry(
       gleojson.GeometryCollection([
         gleojson.Point(gleojson.new_position_2d(lon: 1.0, lat: 2.0)),
         gleojson.LineString([
@@ -259,7 +256,7 @@ pub fn feature_encode_decode_test() {
       id: option.Some(gleojson.StringId("feature-id")),
     )
 
-  let geojson = gleojson.GeoJSONFeature(feature)
+  let geojson = gleojson.GeoFeature(feature)
 
   assert_encode_decode(
     geojson,
@@ -288,7 +285,7 @@ pub fn real_life_feature_test() {
       id: option.Some(gleojson.StringId("yosemite")),
     )
 
-  let geojson = gleojson.GeoJSONFeature(feature)
+  let geojson = gleojson.GeoFeature(feature)
 
   assert_encode_decode(
     geojson,
@@ -329,7 +326,7 @@ pub fn real_life_featurecollection_test() {
   let feature_collection =
     gleojson.FeatureCollection([city_feature, river_feature])
 
-  let geojson = gleojson.GeoJSONFeatureCollection(feature_collection)
+  let geojson = gleojson.GeoFeatureCollection(feature_collection)
 
   assert_encode_decode(
     geojson,

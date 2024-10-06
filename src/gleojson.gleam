@@ -48,9 +48,9 @@ pub type FeatureCollection(properties) {
 }
 
 pub type GeoJSON(properties) {
-  GeoJSONGeometry(Geometry)
-  GeoJSONFeature(Feature(properties))
-  GeoJSONFeatureCollection(FeatureCollection(properties))
+  GeoGeometry(Geometry)
+  GeoFeature(Feature(properties))
+  GeoFeatureCollection(FeatureCollection(properties))
 }
 
 fn encode_position(position: Position) -> json.Json {
@@ -111,39 +111,34 @@ fn encode_feature(
   properties_encoder: fn(properties) -> json.Json,
   feature: Feature(properties),
 ) -> json.Json {
-  let Feature(geometry_opt, properties_opt, id_opt) = feature
-  let geometry_json = case geometry_opt {
-    option.Some(geometry) -> encode_geometry(geometry)
-    option.None -> json.null()
-  }
-  let properties_json = case properties_opt {
-    option.Some(props) -> properties_encoder(props)
-    _ -> json.null()
-  }
-
   let base_obj = [
     #("type", json.string("Feature")),
-    #("geometry", geometry_json),
-    #("properties", properties_json),
+    #("geometry", case feature.geometry {
+      option.Some(geometry) -> encode_geometry(geometry)
+      option.None -> json.null()
+    }),
+    #("properties", case feature.properties {
+      option.Some(props) -> properties_encoder(props)
+      _ -> json.null()
+    }),
   ]
-  let full_obj = case id_opt {
+
+  json.object(case feature.id {
     option.Some(StringId(id)) -> [#("id", json.string(id)), ..base_obj]
     option.Some(NumberId(id)) -> [#("id", json.float(id)), ..base_obj]
     option.None -> base_obj
-  }
-  json.object(full_obj)
+  })
 }
 
 fn encode_featurecollection(
   properties_encoder: fn(properties) -> json.Json,
   collection: FeatureCollection(properties),
 ) -> json.Json {
-  let FeatureCollection(features) = collection
   json.object([
     #("type", json.string("FeatureCollection")),
     #(
       "features",
-      json.array(features, fn(feature) {
+      json.array(collection.features, fn(feature) {
         encode_feature(properties_encoder, feature)
       }),
     ),
@@ -182,7 +177,7 @@ fn encode_featurecollection(
 ///     properties: option.Some(properties),
 ///     id: option.Some(gleojson.StringId("example-point"))
 ///   )
-///   let geojson = gleojson.GeoJSONFeature(feature)
+///   let geojson = gleojson.GeoFeature(feature)
 ///
 ///   let encoded = gleojson.encode_geojson(geojson, custom_properties_encoder)
 ///   io.println(json.to_string(encoded))
@@ -193,9 +188,9 @@ pub fn encode_geojson(
   properties_encoder: fn(properties) -> json.Json,
 ) -> json.Json {
   case geojson {
-    GeoJSONGeometry(geometry) -> encode_geometry(geometry)
-    GeoJSONFeature(feature) -> encode_feature(properties_encoder, feature)
-    GeoJSONFeatureCollection(collection) ->
+    GeoGeometry(geometry) -> encode_geometry(geometry)
+    GeoFeature(feature) -> encode_feature(properties_encoder, feature)
+    GeoFeatureCollection(collection) ->
       encode_featurecollection(properties_encoder, collection)
   }
 }
@@ -371,7 +366,7 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///     Ok(geojson) -> {
 ///       // Work with the decoded GeoJSON object
 ///       case geojson {
-///         gleojson.GeoJSONFeature(feature) -> {
+///         gleojson.GeoFeature(feature) -> {
 ///           io.println("Decoded a feature")
 ///         }
 ///         _ -> io.println("Decoded a different type of GeoJSON object")
@@ -395,13 +390,13 @@ pub fn geojson_decoder(properties_decoder: dynamic.Decoder(properties)) {
     use type_str <- result.try(type_decoder()(dyn_value))
     case type_str {
       "Feature" ->
-        dynamic.decode1(GeoJSONFeature, feature_decoder(properties_decoder))
+        dynamic.decode1(GeoFeature, feature_decoder(properties_decoder))
       "FeatureCollection" ->
         dynamic.decode1(
-          GeoJSONFeatureCollection,
+          GeoFeatureCollection,
           featurecollection_decoder(properties_decoder),
         )
-      _ -> dynamic.decode1(GeoJSONGeometry, geometry_decoder)
+      _ -> dynamic.decode1(GeoGeometry, geometry_decoder)
     }(dyn_value)
   }
 }
