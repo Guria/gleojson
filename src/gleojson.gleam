@@ -16,8 +16,8 @@ pub type Alt {
 }
 
 pub type Position {
-  Position2D(#(Lon, Lat))
-  Position3D(#(Lon, Lat, Alt))
+  Position2D(lon: Lon, lat: Lat)
+  Position3D(lon: Lon, lat: Lat, alt: Alt)
 }
 
 pub type Geometry {
@@ -53,69 +53,10 @@ pub type GeoJSON(properties) {
   GeoJSONFeatureCollection(FeatureCollection(properties))
 }
 
-/// Creates a 2D Position object from longitude and latitude values.
-///
-/// This function is a convenience helper for creating a Position object
-/// with two dimensions (longitude and latitude).
-///
-/// ## Arguments
-///
-/// - `lon`: The longitude value as a Float.
-/// - `lat`: The latitude value as a Float.
-///
-/// ## Returns
-///
-/// A Position object representing a 2D coordinate.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-///
-/// pub fn main() {
-///   let position = gleojson.position_2d(lon: 125.6, lat: 10.1)
-///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
-///   let point = gleojson.Point(coordinates: position)
-/// }
-/// ```
-pub fn position_2d(lon lon: Float, lat lat: Float) -> Position {
-  Position2D(#(Lon(lon), Lat(lat)))
-}
-
-/// Creates a 3D Position object from longitude, latitude, and altitude values.
-///
-/// This function is a convenience helper for creating a Position object
-/// with three dimensions (longitude, latitude, and altitude).
-///
-/// ## Arguments
-///
-/// - `lon`: The longitude value as a Float.
-/// - `lat`: The latitude value as a Float.
-/// - `alt`: The altitude value as a Float.
-///
-/// ## Returns
-///
-/// A Position object representing a 3D coordinate.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-///
-/// pub fn main() {
-///   let position = gleojson.position_3d(lon: 125.6, lat: 10.1, alt: 100.0)
-///   // Use this position in your GeoJSON objects, e.g., in a Point geometry
-///   let point = gleojson.Point(coordinates: position)
-/// }
-/// ```
-pub fn position_3d(lon lon: Float, lat lat: Float, alt alt: Float) -> Position {
-  Position3D(#(Lon(lon), Lat(lat), Alt(alt)))
-}
-
 fn encode_position(position: Position) -> json.Json {
   case position {
-    Position2D(#(Lon(lon), Lat(lat))) -> json.array([lon, lat], json.float)
-    Position3D(#(Lon(lon), Lat(lat), Alt(alt))) ->
+    Position2D(Lon(lon), Lat(lat)) -> json.array([lon, lat], json.float)
+    Position3D(Lon(lon), Lat(lat), Alt(alt)) ->
       json.array([lon, lat, alt], json.float)
   }
 }
@@ -214,15 +155,6 @@ fn encode_featurecollection(
 /// This function takes a GeoJSON object and a properties encoder function,
 /// and returns a JSON representation of the GeoJSON object.
 ///
-/// ## Arguments
-///
-/// - `geojson`: The GeoJSON object to encode.
-/// - `properties_encoder`: A function that encodes the properties of Features and FeatureCollections.
-///
-/// ## Returns
-///
-/// A JSON representation of the GeoJSON object.
-///
 /// ## Example
 ///
 /// ```gleam
@@ -243,7 +175,7 @@ fn encode_featurecollection(
 /// }
 ///
 /// pub fn main() {
-///   let point = gleojson.Point(gleojson.position_2d(lon: 0.0, lat: 0.0))
+///   let point = gleojson.Point(gleojson.new_position_2d(lon: 0.0, lat: 0.0))
 ///   let properties = CustomProperties("Example", 42.0)
 ///   let feature = gleojson.Feature(
 ///     geometry: option.Some(point),
@@ -251,7 +183,7 @@ fn encode_featurecollection(
 ///     id: option.Some(gleojson.StringId("example-point"))
 ///   )
 ///   let geojson = gleojson.GeoJSONFeature(feature)
-///   
+///
 ///   let encoded = gleojson.encode_geojson(geojson, custom_properties_encoder)
 ///   io.println(json.to_string(encoded))
 /// }
@@ -269,23 +201,21 @@ pub fn encode_geojson(
 }
 
 fn position_decoder() {
-  dynamic.any([
-    dynamic.decode1(
-      Position3D,
-      dynamic.tuple3(
-        dynamic.decode1(Lon, dynamic.float),
-        dynamic.decode1(Lat, dynamic.float),
-        dynamic.decode1(Alt, dynamic.float),
-      ),
-    ),
-    dynamic.decode1(
-      Position2D,
-      dynamic.tuple2(
-        dynamic.decode1(Lon, dynamic.float),
-        dynamic.decode1(Lat, dynamic.float),
-      ),
-    ),
-  ])
+  fn(dyn_value) {
+    use list <- result.try(dynamic.list(dynamic.float)(dyn_value))
+    case list {
+      [lon, lat, alt] -> Ok(new_position_3d(lon, lat, alt))
+      [lon, lat] -> Ok(new_position_2d(lon, lat))
+      _ ->
+        Error([
+          dynamic.DecodeError(
+            expected: "list at least 2 coordinates",
+            found: dynamic.classify(dyn_value),
+            path: [],
+          ),
+        ])
+    }
+  }
 }
 
 fn positions_decoder() {
@@ -406,15 +336,6 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 /// This function takes a dynamic value (typically parsed from JSON) and a properties decoder,
 /// and attempts to decode it into a GeoJSON object.
 ///
-/// ## Arguments
-///
-/// - `properties_decoder`: A function that decodes the properties of Features and FeatureCollections.
-///
-/// ## Returns
-///
-/// A function that takes a dynamic value and returns a Result containing either
-/// the decoded GeoJSON object or a list of decode errors.
-///
 /// ## Example
 ///
 /// ```gleam
@@ -429,25 +350,23 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///   CustomProperties(name: String, value: Float)
 /// }
 ///
-/// pub fn custom_properties_decoder(
-///   dyn: dynamic.Dynamic,
-/// ) -> Result(CustomProperties, List(dynamic.DecodeError)) {
+/// pub fn custom_properties_decoder() {
 ///   dynamic.decode2(
 ///     CustomProperties,
 ///     dynamic.field("name", dynamic.string),
 ///     dynamic.field("value", dynamic.float),
-///   )(dyn)
+///   )
 /// }
 ///
 /// pub fn main() {
 ///   let json_string = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[0.0,0.0]},\"properties\":{\"name\":\"Example\",\"value\":42.0}}"
-///   
-///   let decoded = 
+///
+///   let decoded =
 ///     json.decode(
 ///       from: json_string,
-///       using: gleojson.geojson_decoder(custom_properties_decoder)
+///       using: gleojson.geojson_decoder(custom_properties_decoder())
 ///     )
-///   
+///
 ///   case decoded {
 ///     Ok(geojson) -> {
 ///       // Work with the decoded GeoJSON object
@@ -491,31 +410,6 @@ pub fn geojson_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///
 /// This is a utility function that can be used as the `properties_encoder`
 /// argument for `encode_geojson` when you don't need to encode any properties.
-///
-/// ## Returns
-///
-/// A JSON null value.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-/// import gleam/json
-/// import gleam/option
-///
-/// pub fn main() {
-///   let point = gleojson.Point([0.0, 0.0])
-///   let feature = gleojson.Feature(
-///     geometry: option.Some(point),
-///     properties: option.None,
-///     id: option.None
-///   )
-///   let geojson = gleojson.GeoJSONFeature(feature)
-///   
-///   let encoded = gleojson.encode_geojson(geojson, gleojson.properties_null_encoder)
-///   // The "properties" field in the resulting JSON will be null
-/// }
-/// ```
 pub fn properties_null_encoder(_props) {
   json.null()
 }
@@ -524,30 +418,22 @@ pub fn properties_null_encoder(_props) {
 ///
 /// This is a utility function that can be used as the `properties_decoder`
 /// argument for `geojson_decoder` when you don't need to decode any properties.
-///
-/// ## Returns
-///
-/// Always returns `Ok(Nil)`.
-///
-/// ## Example
-///
-/// ```gleam
-/// import gleojson
-/// import gleam/json
-/// import gleam/result
-///
-/// pub fn main() {
-///   let json_string = "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[0.0,0.0]},\"properties\":null}"
-///   
-///   let decoded = 
-///     json.decode(
-///       from: json_string,
-///       using: gleojson.geojson_decoder(gleojson.properties_null_decoder)
-///     )
-///   
-///   // The "properties" field in the decoded Feature will be None
-/// }
-/// ```
 pub fn properties_null_decoder(_dyn) -> Result(Nil, List(dynamic.DecodeError)) {
   Ok(Nil)
+}
+
+/// Creates a 2D Position object from longitude and latitude values.
+///
+/// This function is a convenience helper for creating a Position object
+/// with two dimensions (longitude and latitude).
+pub fn new_position_2d(lon lon, lat lat) {
+  Position2D(Lon(lon), Lat(lat))
+}
+
+/// Creates a 3D Position object from longitude, latitude, and altitude values.
+///
+/// This function is a convenience helper for creating a Position object
+/// with three dimensions (longitude, latitude, and altitude).
+pub fn new_position_3d(lon lon, lat lat, alt alt) {
+  Position3D(Lon(lon), Lat(lat), Alt(alt))
 }
