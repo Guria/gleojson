@@ -46,7 +46,7 @@ import gleam/io
 
 pub fn main() {
   // Create a Point geometry
-  let point = gleojson.Point(gleojson.position_2d(lon: 125.6, lat: 10.1))
+  let point = gleojson.Point(gleojson.new_position_2d(lon: 125.6, lat: 10.1))
 
   // Create a Feature with the Point geometry
   let feature = gleojson.Feature(
