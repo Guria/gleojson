@@ -1,4 +1,5 @@
 import birdie
+import examples/encode
 import gleam/dynamic
 import gleam/json
 import gleam/option
@@ -334,4 +335,11 @@ pub fn real_life_featurecollection_test() {
     mixed_features_properties_decoder(),
     "real_life_featurecollection",
   )
+}
+
+pub fn example_test() {
+  encode.main()
+  |> dynamic.from()
+  |> dynamic.classify()
+  |> should.equal("String")
 }
