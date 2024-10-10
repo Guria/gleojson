@@ -44,29 +44,24 @@ gleam add gleojson
 
 Here's a basic example of how to use gleojson:
 
-```gleam
-import gleojson
+```gleam:./test/examples/encode.gleam
 import gleam/json
 import gleam/option
-import gleam/io
+import gleojson
 
 pub fn main() {
   // Create a Point geometry
-  let point = gleojson.Point(gleojson.new_position_2d(lon: 125.6, lat: 10.1))
-
+  gleojson.Point(gleojson.new_position_2d(lon: 125.6, lat: 10.1))
+  |> option.Some
   // Create a Feature with the Point geometry
-  let feature = gleojson.Feature(
-    geometry: option.Some(point),
+  |> gleojson.Feature(
     properties: option.None,
-    id: option.Some(gleojson.StringId("example-point"))
+    id: option.Some(gleojson.StringId("example-point")),
   )
-
   // Encode the Feature to GeoJSON
-  let geojson = gleojson.GeoFeature(feature)
-  let encoded = gleojson.encode_geojson(geojson, gleojson.properties_null_encoder)
-
-  // Print the encoded GeoJSON
-  io.println(json.to_string(encoded))
+  |> gleojson.GeoFeature
+  |> gleojson.encode_geojson(gleojson.properties_null_encoder)
+  |> json.to_string
 }
 ```
 

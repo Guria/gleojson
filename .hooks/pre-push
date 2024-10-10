@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+[ -f ./.hooks/setup_env ] && source ./.hooks/setup_env
+gleam run -m scripts/embed_examples -- --check README.md
