@@ -1,5 +1,6 @@
 import birdie
 import decode/zero
+import examples/decode
 import examples/encode
 import gleam/dynamic
 import gleam/json
@@ -119,9 +120,9 @@ fn assert_encode_decode(
 
   birdie.snap(encoded, name)
 
-  json.decode(from: encoded, using: fn(dynamic_value) {
-    zero.run(dynamic_value, gleojson.geojson_decoder(properties_decoder))
-  })
+  json.decode(from: encoded, using: zero.run(_, gleojson.geojson_decoder(
+    properties_decoder,
+  )))
   |> should.be_ok
   |> should.equal(geojson)
 }
@@ -134,8 +135,8 @@ pub fn point_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "point_encode_decode",
   )
 }
@@ -151,8 +152,8 @@ pub fn multipoint_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "multipoint_encode_decode",
   )
 }
@@ -168,8 +169,8 @@ pub fn linestring_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "linestring_encode_decode",
   )
 }
@@ -189,8 +190,8 @@ pub fn polygon_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "polygon_encode_decode",
   )
 }
@@ -220,8 +221,8 @@ pub fn multipolygon_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "multipolygon_encode_decode",
   )
 }
@@ -240,8 +241,8 @@ pub fn geometrycollection_encode_decode_test() {
 
   assert_encode_decode(
     geojson,
-    gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder(),
+    fn(_) { json.null() },
+    zero.success(Nil),
     "geometrycollection_encode_decode",
   )
 }
@@ -343,4 +344,9 @@ pub fn example_test() {
   |> dynamic.from()
   |> dynamic.classify()
   |> should.equal("String")
+}
+
+pub fn example_decode_test() {
+  decode.main()
+  |> should.equal(Nil)
 }

@@ -13,6 +13,6 @@ pub fn main() {
   )
   // Encode the Feature to GeoJSON
   |> gleojson.GeoFeature
-  |> gleojson.encode_geojson(gleojson.properties_null_encoder)
+  |> gleojson.encode_geojson(fn(_) { json.null() })
   |> json.to_string
 }

@@ -329,9 +329,7 @@ fn featurecollection_decoder(properties_decoder: zero.Decoder(properties)) {
 ///   let decoded =
 ///     json.decode(
 ///       from: json_string,
-///       using: fn(dynamic_value) {
-///         zero.run(dynamic_value, gleojson.geojson_decoder(custom_properties_decoder()))
-///       }
+///       using: zero.run(_, gleojson.geojson_decoder(custom_properties_decoder()))
 ///     )
 ///
 ///   case decoded {
@@ -350,8 +348,8 @@ fn featurecollection_decoder(properties_decoder: zero.Decoder(properties)) {
 /// }
 /// ```
 ///
-/// Note: This function expects a valid GeoJSON structure. Invalid or incomplete
-/// GeoJSON data will result in a decode error.
+/// Note: This function expects a valid GeoJSON structure.
+/// Invalid or incomplete GeoJSON data will result in a decode error.
 pub fn geojson_decoder(properties_decoder: zero.Decoder(properties)) {
   use type_str <- zero.then(type_decoder())
   case type_str {
@@ -361,22 +359,6 @@ pub fn geojson_decoder(properties_decoder: zero.Decoder(properties)) {
       |> zero.map(GeoFeatureCollection)
     _ -> geometry_decoder() |> zero.map(GeoGeometry)
   }
-}
-
-/// Encodes null properties for Features and FeatureCollections.
-///
-/// This is a utility function that can be used as the `properties_encoder`
-/// argument for `encode_geojson` when you don't need to encode any properties.
-pub fn properties_null_encoder(_props) {
-  json.null()
-}
-
-/// Decodes null properties for Features and FeatureCollections.
-///
-/// This is a utility function that can be used as the `properties_decoder`
-/// argument for `geojson_decoder` when you don't need to decode any properties.
-pub fn properties_null_decoder() {
-  zero.success(Ok(Nil))
 }
 
 /// Creates a 2D Position object from longitude and latitude values.
