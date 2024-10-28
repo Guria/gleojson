@@ -1,4 +1,5 @@
 import birdie
+import decode/zero
 import examples/encode
 import gleam/dynamic
 import gleam/json
@@ -21,11 +22,10 @@ fn test_properties_encoder(props: TestProperties) -> json.Json {
 }
 
 fn test_properties_decoder() {
-  dynamic.decode2(
-    TestProperties,
-    dynamic.field("name", dynamic.string),
-    dynamic.field("value", dynamic.float),
-  )
+  use name <- zero.field("name", zero.string)
+  use value <- zero.field("value", zero.float)
+  TestProperties(name:, value:)
+  |> zero.success
 }
 
 pub type ParkProperties {
@@ -48,13 +48,12 @@ fn park_properties_encoder(props: ParkProperties) -> json.Json {
 }
 
 fn park_properties_decoder() {
-  dynamic.decode4(
-    ParkProperties,
-    dynamic.field("name", dynamic.string),
-    dynamic.field("area_sq_km", dynamic.float),
-    dynamic.field("year_established", dynamic.int),
-    dynamic.field("is_protected", dynamic.bool),
-  )
+  use name <- zero.field("name", zero.string)
+  use area_sq_km <- zero.field("area_sq_km", zero.float)
+  use year_established <- zero.field("year_established", zero.int)
+  use is_protected <- zero.field("is_protected", zero.bool)
+  ParkProperties(name:, area_sq_km:, year_established:, is_protected:)
+  |> zero.success
 }
 
 pub type MixedFeaturesProperties {
@@ -88,27 +87,30 @@ fn mixed_features_properties_encoder(
 }
 
 fn mixed_features_properties_decoder() {
-  dynamic.any([
-    dynamic.decode4(
-      CityProperties,
-      dynamic.field("name", dynamic.string),
-      dynamic.field("population", dynamic.int),
-      dynamic.field("timezone", dynamic.string),
-      dynamic.field("elevation", dynamic.float),
-    ),
-    dynamic.decode3(
-      RiverProperties,
-      dynamic.field("name", dynamic.string),
-      dynamic.field("length_km", dynamic.float),
-      dynamic.field("countries", dynamic.list(dynamic.string)),
-    ),
-  ])
+  use name <- zero.field("name", zero.string)
+  zero.one_of(
+    {
+      use population <- zero.field("population", zero.int)
+      use timezone <- zero.field("timezone", zero.string)
+      use elevation <- zero.field("elevation", zero.float)
+      CityProperties(name:, population:, timezone:, elevation:)
+      |> zero.success
+    },
+    [
+      {
+        use length_km <- zero.field("length_km", zero.float)
+        use countries <- zero.field("countries", zero.list(zero.string))
+        RiverProperties(name:, length_km:, countries:)
+        |> zero.success
+      },
+    ],
+  )
 }
 
 fn assert_encode_decode(
   geojson: gleojson.GeoJSON(properties),
   properties_encoder: fn(properties) -> json.Json,
-  properties_decoder: dynamic.Decoder(properties),
+  properties_decoder: zero.Decoder(properties),
   name: String,
 ) {
   let encoded =
@@ -117,10 +119,9 @@ fn assert_encode_decode(
 
   birdie.snap(encoded, name)
 
-  json.decode(
-    from: encoded,
-    using: gleojson.geojson_decoder(properties_decoder),
-  )
+  json.decode(from: encoded, using: fn(dynamic_value) {
+    zero.run(dynamic_value, gleojson.geojson_decoder(properties_decoder))
+  })
   |> should.be_ok
   |> should.equal(geojson)
 }
@@ -134,7 +135,7 @@ pub fn point_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "point_encode_decode",
   )
 }
@@ -151,7 +152,7 @@ pub fn multipoint_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "multipoint_encode_decode",
   )
 }
@@ -168,7 +169,7 @@ pub fn linestring_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "linestring_encode_decode",
   )
 }
@@ -189,7 +190,7 @@ pub fn polygon_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "polygon_encode_decode",
   )
 }
@@ -220,7 +221,7 @@ pub fn multipolygon_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "multipolygon_encode_decode",
   )
 }
@@ -240,7 +241,7 @@ pub fn geometrycollection_encode_decode_test() {
   assert_encode_decode(
     geojson,
     gleojson.properties_null_encoder,
-    gleojson.properties_null_decoder,
+    gleojson.properties_null_decoder(),
     "geometrycollection_encode_decode",
   )
 }

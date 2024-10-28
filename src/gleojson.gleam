@@ -1,7 +1,6 @@
-import gleam/dynamic
+import decode/zero
 import gleam/json
 import gleam/option
-import gleam/result
 
 pub type Lon {
   Lon(Float)
@@ -196,148 +195,120 @@ pub fn encode_geojson(
 }
 
 fn position_decoder() {
-  fn(dyn_value) {
-    use list <- result.try(dynamic.list(dynamic.float)(dyn_value))
-    case list {
-      [lon, lat, alt] -> Ok(new_position_3d(lon, lat, alt))
-      [lon, lat] -> Ok(new_position_2d(lon, lat))
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "list at least 2 coordinates",
-            found: dynamic.classify(dyn_value),
-            path: [],
-          ),
-        ])
-    }
+  use decoded_list <- zero.then(zero.list(zero.float))
+  case decoded_list {
+    [lon, lat, alt] -> zero.success(new_position_3d(lon, lat, alt))
+    [lon, lat] -> zero.success(new_position_2d(lon, lat))
+    _ -> zero.failure(new_position_2d(0.0, 0.0), "list at least 2 coordinates")
   }
 }
 
 fn positions_decoder() {
-  dynamic.list(position_decoder())
+  zero.list(position_decoder())
 }
 
 fn positions_list_decoder() {
-  dynamic.list(positions_decoder())
+  zero.list(positions_decoder())
 }
 
 fn positions_list_list_decoder() {
-  dynamic.list(positions_list_decoder())
+  zero.list(positions_list_decoder())
 }
 
 fn type_decoder() {
-  dynamic.field("type", dynamic.string)
+  zero.field("type", zero.string, zero.success)
 }
 
-fn coords_decoder(decoder) {
-  dynamic.field("coordinates", decoder)
+fn coords_decoder(decoder, next) {
+  zero.field("coordinates", decoder, next)
 }
 
-fn geometry_decoder(dyn_value: dynamic.Dynamic) {
-  use type_str <- result.try(type_decoder()(dyn_value))
+fn geometry_decoder() {
+  use type_str <- zero.then(type_decoder())
   case type_str {
-    "Point" -> dynamic.decode1(Point, coords_decoder(position_decoder()))
-    "MultiPoint" ->
-      dynamic.decode1(MultiPoint, coords_decoder(positions_decoder()))
-    "LineString" ->
-      dynamic.decode1(LineString, coords_decoder(positions_decoder()))
-    "MultiLineString" ->
-      dynamic.decode1(MultiLineString, coords_decoder(positions_list_decoder()))
-    "Polygon" ->
-      dynamic.decode1(Polygon, coords_decoder(positions_list_decoder()))
-    "MultiPolygon" ->
-      dynamic.decode1(
-        MultiPolygon,
-        coords_decoder(positions_list_list_decoder()),
-      )
-    "GeometryCollection" ->
-      dynamic.decode1(
-        GeometryCollection,
-        dynamic.field("geometries", dynamic.list(geometry_decoder)),
-      )
-    _ -> fn(_) {
-      Error([
-        dynamic.DecodeError(
-          expected: "one of [Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon, GeometryCollection]",
-          found: type_str,
-          path: ["type"],
-        ),
-      ])
+    "Point" -> {
+      use position <- coords_decoder(position_decoder())
+      zero.success(Point(position))
     }
-  }(dyn_value)
-}
-
-fn feature_id_decoder() {
-  dynamic.any([
-    dynamic.decode1(StringId, dynamic.string),
-    dynamic.decode1(NumberId, dynamic.float),
-  ])
-}
-
-fn feature_decoder(properties_decoder: dynamic.Decoder(properties)) {
-  fn(dyn_value: dynamic.Dynamic) -> Result(
-    Feature(properties),
-    List(dynamic.DecodeError),
-  ) {
-    use type_str <- result.try(type_decoder()(dyn_value))
-    case type_str {
-      "Feature" -> {
-        dynamic.decode3(
-          Feature,
-          dynamic.field("geometry", dynamic.optional(geometry_decoder)),
-          dynamic.field("properties", dynamic.optional(properties_decoder)),
-          dynamic.optional_field("id", feature_id_decoder()),
-        )(dyn_value)
-      }
-      _ ->
-        Error([
-          dynamic.DecodeError(expected: "Feature", found: type_str, path: [
-            "type",
-          ]),
-        ])
+    "MultiPoint" -> {
+      use positions <- coords_decoder(positions_decoder())
+      zero.success(MultiPoint(positions))
     }
+    "LineString" -> {
+      use positions <- coords_decoder(positions_decoder())
+      zero.success(LineString(positions))
+    }
+    "MultiLineString" -> {
+      use positions_list <- coords_decoder(positions_list_decoder())
+      zero.success(MultiLineString(positions_list))
+    }
+    "Polygon" -> {
+      use positions_list <- coords_decoder(positions_list_decoder())
+      zero.success(Polygon(positions_list))
+    }
+    "MultiPolygon" -> {
+      use positions_list_list <- coords_decoder(positions_list_list_decoder())
+      zero.success(MultiPolygon(positions_list_list))
+    }
+    "GeometryCollection" -> {
+      use geometries <- zero.field("geometries", zero.list(geometry_decoder()))
+      zero.success(GeometryCollection(geometries))
+    }
+    _ -> zero.failure(Point(new_position_2d(0.0, 0.0)), "unknown geometry type")
   }
 }
 
-fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
-  fn(dyn_value: dynamic.Dynamic) -> Result(
-    FeatureCollection(properties),
-    List(dynamic.DecodeError),
-  ) {
-    use type_str <- result.try(type_decoder()(dyn_value))
-    case type_str {
-      "FeatureCollection" ->
-        dynamic.decode1(
-          FeatureCollection,
-          dynamic.field(
-            "features",
-            dynamic.list(feature_decoder(properties_decoder)),
-          ),
-        )(dyn_value)
-      _ ->
-        Error([
-          dynamic.DecodeError(
-            expected: "FeatureCollection",
-            found: type_str,
-            path: ["type"],
-          ),
-        ])
+fn feature_id_decoder() {
+  zero.one_of(zero.string |> zero.map(StringId), [
+    zero.float |> zero.map(NumberId),
+  ])
+}
+
+fn feature_decoder(properties_decoder: zero.Decoder(properties)) {
+  use type_str <- zero.then(type_decoder())
+  case type_str {
+    "Feature" -> {
+      use geometry <- zero.field("geometry", zero.optional(geometry_decoder()))
+      use properties <- zero.field(
+        "properties",
+        zero.optional(properties_decoder),
+      )
+      use id <- zero.field("id", zero.optional(feature_id_decoder()))
+      zero.success(Feature(geometry, properties, id))
     }
+    _ ->
+      zero.failure(
+        Feature(option.None, option.None, option.None),
+        "expected Feature",
+      )
+  }
+}
+
+fn featurecollection_decoder(properties_decoder: zero.Decoder(properties)) {
+  use type_str <- zero.then(type_decoder())
+  case type_str {
+    "FeatureCollection" -> {
+      use features <- zero.field(
+        "features",
+        zero.list(feature_decoder(properties_decoder)),
+      )
+      zero.success(FeatureCollection(features))
+    }
+    _ -> zero.failure(FeatureCollection([]), "expected FeatureCollection")
   }
 }
 
 /// Decodes a GeoJSON object from a dynamic value.
 ///
-/// This function takes a dynamic value (typically parsed from JSON) and a properties decoder,
-/// and attempts to decode it into a GeoJSON object.
+/// This function takes a properties decoder for Feature and FeatureCollection properties,
+/// and returns a decoder for GeoJSON objects.
 ///
 /// ## Example
 ///
 /// ```gleam
 /// import gleojson
 /// import gleam/json
-/// import gleam/result
-/// import gleam/dynamic
+/// import decode/zero
 /// import gleam/io
 /// import gleam/string
 ///
@@ -346,11 +317,10 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 /// }
 ///
 /// pub fn custom_properties_decoder() {
-///   dynamic.decode2(
-///     CustomProperties,
-///     dynamic.field("name", dynamic.string),
-///     dynamic.field("value", dynamic.float),
-///   )
+///   use name <- zero.field("name", zero.string)
+///   use value <- zero.field("value", zero.float)
+///   CustomProperties(name: name, value: value)
+///   |> zero.success
 /// }
 ///
 /// pub fn main() {
@@ -359,12 +329,13 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///   let decoded =
 ///     json.decode(
 ///       from: json_string,
-///       using: gleojson.geojson_decoder(custom_properties_decoder())
+///       using: fn(dynamic_value) {
+///         zero.run(dynamic_value, gleojson.geojson_decoder(custom_properties_decoder()))
+///       }
 ///     )
 ///
 ///   case decoded {
 ///     Ok(geojson) -> {
-///       // Work with the decoded GeoJSON object
 ///       case geojson {
 ///         gleojson.GeoFeature(feature) -> {
 ///           io.println("Decoded a feature")
@@ -372,9 +343,8 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///         _ -> io.println("Decoded a different type of GeoJSON object")
 ///       }
 ///     }
-///     Error(errors) -> {
-///       // Handle decoding errors
-///       io.println("Failed to decode: " <> string.join(errors, ", "))
+///     Error(error) -> {
+///       io.println("Failed to decode: " <> error)
 ///     }
 ///   }
 /// }
@@ -382,22 +352,14 @@ fn featurecollection_decoder(properties_decoder: dynamic.Decoder(properties)) {
 ///
 /// Note: This function expects a valid GeoJSON structure. Invalid or incomplete
 /// GeoJSON data will result in a decode error.
-pub fn geojson_decoder(properties_decoder: dynamic.Decoder(properties)) {
-  fn(dyn_value: dynamic.Dynamic) -> Result(
-    GeoJSON(properties),
-    List(dynamic.DecodeError),
-  ) {
-    use type_str <- result.try(type_decoder()(dyn_value))
-    case type_str {
-      "Feature" ->
-        dynamic.decode1(GeoFeature, feature_decoder(properties_decoder))
-      "FeatureCollection" ->
-        dynamic.decode1(
-          GeoFeatureCollection,
-          featurecollection_decoder(properties_decoder),
-        )
-      _ -> dynamic.decode1(GeoGeometry, geometry_decoder)
-    }(dyn_value)
+pub fn geojson_decoder(properties_decoder: zero.Decoder(properties)) {
+  use type_str <- zero.then(type_decoder())
+  case type_str {
+    "Feature" -> feature_decoder(properties_decoder) |> zero.map(GeoFeature)
+    "FeatureCollection" ->
+      featurecollection_decoder(properties_decoder)
+      |> zero.map(GeoFeatureCollection)
+    _ -> geometry_decoder() |> zero.map(GeoGeometry)
   }
 }
 
@@ -413,8 +375,8 @@ pub fn properties_null_encoder(_props) {
 ///
 /// This is a utility function that can be used as the `properties_decoder`
 /// argument for `geojson_decoder` when you don't need to decode any properties.
-pub fn properties_null_decoder(_dyn) -> Result(Nil, List(dynamic.DecodeError)) {
-  Ok(Nil)
+pub fn properties_null_decoder() {
+  zero.success(Ok(Nil))
 }
 
 /// Creates a 2D Position object from longitude and latitude values.
